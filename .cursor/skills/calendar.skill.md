@@ -1,0 +1,1 @@
+Integración de API (Google Calendar): Debe saber autenticar la aplicación y usar los métodos events.list (para ver qué horas están ocupadas) e events.insert (para crear la reserva).

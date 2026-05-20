@@ -1,0 +1,1 @@
+Gestión de Formularios: Debe validar que el usuario introduzca un email válido y un nombre antes de enviar la reserva.

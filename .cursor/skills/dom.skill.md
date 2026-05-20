@@ -1,0 +1,1 @@
+Manipulación del DOM: Debe saber crear un calendario visual en HTML donde el usuario pueda clicar las horas disponibles.

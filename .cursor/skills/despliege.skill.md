@@ -1,0 +1,1 @@
+Guía de Despliegue: Debe darme los pasos exactos para subir este proyecto a GitHub y luego a Netlify (o Google Apps Script).

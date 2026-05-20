@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Reserva online de espacios del Centro de Usos Multiples del Ayuntamiento.">
+  <title>Reservas Centro de Usos Múltiples - Ayuntamiento</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="assets/img/logo.png" type="image/png">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <a class="saltar-contenido" href="#contenido-principal">Saltar al contenido principal</a>
+
+  <header class="cabecera">
+    <div class="cabecera__textos">
+      <p class="cabecera__ayuntamiento">Ayuntamiento de Moj&aacute;car</p>
+      <h1>Centro de Usos M&uacute;ltiples</h1>
+      <p class="cabecera__subtitulo">Reserva de salas y espacios municipales</p>
+    </div>
+    <div class="cabecera__logo">
+      <img class="cabecera__escudo" src="assets/img/logo.png" width="400" height="100" alt="Logo del Ayuntamiento de Moj&aacute;car">
+    </div>
+    <div class="cabecera__auth">
+      <span id="usuario-nombre" class="usuario-nombre" hidden></span>
+      <button type="button" id="btn-login" class="btn btn--secundario">Acceder con Google</button>
+      <button type="button" id="btn-logout" class="btn btn--secundario" hidden>Cerrar sesi&oacute;n</button>
+    </div>
+  </header>
+
+  <main id="contenido-principal" class="contenedor">
+    <section class="intro" aria-labelledby="titulo-intro">
+      <h2 id="titulo-intro" class="intro__titulo">Reserva tu espacio de forma sencilla</h2>
+      <p class="intro__texto">
+        Consulta la disponibilidad del calendario municipal y solicita la reserva del Centro de Usos Múltiples
+        para actividades vecinales, asociaciones, talleres o reuniones.
+      </p>
+    </section>
+
+    <div class="rejilla-principal">
+      <aside class="lateral" aria-labelledby="titulo-como-reservar">
+        <section class="tarjeta-info">
+          <h2 id="titulo-como-reservar" class="tarjeta-info__titulo">C&oacute;mo reservar</h2>
+          <ol class="pasos">
+            <li class="pasos__item">
+              <span class="pasos__numero" aria-hidden="true">1</span>
+              <div>
+                <strong>Accede con Google</strong>
+                <p>Usa tu cuenta de correo. Solo usuarios autorizados pueden gestionar reservas.</p>
+              </div>
+            </li>
+            <li class="pasos__item">
+              <span class="pasos__numero" aria-hidden="true">2</span>
+              <div>
+                <strong>Consulta el calendario</strong>
+                <p>Revisa las reservas ya confirmadas en los pr&oacute;ximos tres meses.</p>
+              </div>
+            </li>
+            <li class="pasos__item">
+              <span class="pasos__numero" aria-hidden="true">3</span>
+              <div>
+                <strong>Rellena el formulario</strong>
+                <p>Indica fecha, horario y motivo de la actividad.</p>
+              </div>
+            </li>
+            <li class="pasos__item">
+              <span class="pasos__numero" aria-hidden="true">4</span>
+              <div>
+                <strong>Confirma la solicitud</strong>
+                <p>Si el horario est&aacute; libre, la reserva se guarda en el calendario del Centro de Usos Múltiples.</p>
+              </div>
+            </li>
+          </ol>
+        </section>
+
+        <section class="tarjeta-info tarjeta-info--normas">
+          <h2 class="tarjeta-info__titulo">Normas de uso</h2>
+          <ul class="lista-normas">
+            <li>Respeta el horario reservado; libera el espacio al finalizar.</li>
+            <li>No se permiten reservas en fechas u horas ya pasadas.</li>
+            <li>Un mismo tramo horario no puede reservarse dos veces.</li>
+            <li>El ayuntamiento puede anular reservas por causas de fuerza mayor.</li>
+          </ul>
+        </section>
+
+        <section class="tarjeta-info tarjeta-info--contacto">
+          <h2 class="tarjeta-info__titulo">&iquest;Necesitas ayuda?</h2>
+          <p class="tarjeta-info__texto">
+            <strong>Atenci&oacute;n ciudadana</strong><br>
+            Tel.: 950 615 009<br>
+            Email: info@mojacar.es<br>
+            Horario: lunes a viernes, 9:00 a 14:00
+          </p>
+        </section>
+      </aside>
+
+      <div class="zona-acciones">
+        <div id="mensaje-global" class="mensaje" role="alert" hidden></div>
+
+        <div id="aviso-sesion" class="aviso-sesion" role="status">
+          <p><strong>Para reservar</strong>, primero debes acceder con tu cuenta de Google.</p>
+        </div>
+
+        <section class="panel" aria-labelledby="titulo-listado">
+          <header class="panel__cabecera">
+            <h2 id="titulo-listado">Calendario de reservas</h2>
+            <p id="estado-listado" class="panel__ayuda">Accede con Google para consultar las reservas confirmadas.</p>
+            <p class="panel__ayuda panel__privacidad">
+              <strong>Privacidad:</strong> en este listado solo ver&aacute;s franjas ocupadas. Los datos personales del solicitante no se muestran aqu&iacute; ni en el calendario p&uacute;blico (solo los usa el ayuntamiento de forma interna).
+            </p>
+          </header>
+          <ul id="lista-reservas" class="lista-reservas"></ul>
+        </section>
+
+        <section class="panel panel--formulario" aria-labelledby="titulo-formulario">
+          <header class="panel__cabecera">
+            <h2 id="titulo-formulario">Solicitud de reserva</h2>
+            <p class="panel__ayuda">
+              Los campos marcados con <span class="obligatorio" aria-hidden="true">*</span> son obligatorios.
+            </p>
+          </header>
+
+          <form id="form-reserva" class="formulario" novalidate>
+            <fieldset class="formulario__grupo" disabled id="fieldset-formulario">
+              <legend class="visually-hidden">Datos de la reserva</legend>
+
+              <div class="formulario__fila">
+                <label class="formulario__campo">
+                  <span>Nombre y apellidos <span class="obligatorio">*</span></span>
+                  <input type="text" id="nombre" name="nombre" required autocomplete="name" maxlength="120" placeholder="Ej.: Maria Garcia Lopez">
+                  <small class="formulario__pista">Persona responsable de la actividad</small>
+                </label>
+                <label class="formulario__campo">
+                  <span>Correo electr&oacute;nico <span class="obligatorio">*</span></span>
+                  <input type="email" id="email" name="email" required autocomplete="email" placeholder="Ej.: nombre@correo.com">
+                  <small class="formulario__pista">Para contacto del ayuntamiento</small>
+                </label>
+              </div>
+
+              <div class="formulario__fila formulario__fila--horario">
+                <label class="formulario__campo">
+                  <span>Fecha de la reserva <span class="obligatorio">*</span></span>
+                  <input type="date" id="fecha" name="fecha" required>
+                </label>
+                <label class="formulario__campo">
+                  <span>Hora de inicio <span class="obligatorio">*</span></span>
+                  <input type="time" id="hora-inicio" name="horaInicio" required>
+                </label>
+                <label class="formulario__campo">
+                  <span>Hora de fin <span class="obligatorio">*</span></span>
+                  <input type="time" id="hora-fin" name="horaFin" required>
+                  <small class="formulario__pista">Debe ser posterior a la hora de inicio</small>
+                </label>
+              </div>
+
+              <label class="formulario__campo formulario__campo--ancho">
+                <span>Motivo de la reserva <span class="obligatorio">*</span></span>
+                <textarea id="motivo" name="motivo" rows="4" required maxlength="500" placeholder="Describe la actividad: reunion vecinal, ensayo, taller formativo..."></textarea>
+              </label>
+
+              <div class="formulario__acciones">
+                <button type="submit" id="btn-enviar" class="btn btn--primario" disabled>Confirmar reserva</button>
+                <p class="formulario__legal">
+                  Al enviar la solicitud, aceptas las normas de uso del Centro de Usos M&uacute;ltiples.
+                </p>
+              </div>
+            </fieldset>
+          </form>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="pie">
+    <div class="pie__contenido">
+      <p class="pie__titulo">Ayuntamiento de Mojácar - Centro de Usos M&uacute;ltiples</p>
+      <p class="pie__detalle">
+        Plaza del Ayuntamiento, 1 - 04638 Mojácar (Almería)
+      </p>
+    </div>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
