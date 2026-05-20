@@ -66,12 +66,8 @@ export async function listarEventos(timeMin, timeMax) {
   return items.map((evento) => ({
     id: evento.id,
     titulo: evento.summary || "(Sin título)",
-    /**
-     * No enviamos description a la interfaz: en reservas antiguas podía contener
-     * nombre, email y motivo; si el calendario es público eso sería un problema de privacidad.
-     * Los datos nuevos van en extendedProperties.private (solo administración vía API).
-     */
-    descripcion: "",
+    // Devolvemos la descripción para extraer datos (nombre, email, motivo)
+    descripcion: evento.description || "",
     inicio: evento.start?.dateTime || evento.start?.date,
     fin: evento.end?.dateTime || evento.end?.date,
   }));
@@ -100,4 +96,52 @@ export async function crearEvento(evento) {
   }
 
   return respuesta.json();
+}
+
+/**
+ * Actualiza un evento existente en el calendario del CUM.
+ * @param {string} eventoId - ID del evento a actualizar
+ * @param {object} evento - objeto del evento con los datos actualizados
+ */
+export async function actualizarEvento(eventoId, evento) {
+  comprobarCalendarioConfigurado();
+
+  const url = `${URL_BASE}/calendars/${encodeURIComponent(CALENDAR_ID)}/events/${encodeURIComponent(eventoId)}`;
+
+  const respuesta = await fetch(url, {
+    method: "PATCH",
+    headers: cabecerasAutenticadas(),
+    body: JSON.stringify(evento),
+  });
+
+  if (!respuesta.ok) {
+    const error = await respuesta.json().catch(() => ({}));
+    throw new Error(
+      error.error?.message || `Error al actualizar la reserva (${respuesta.status})`
+    );
+  }
+
+  return respuesta.json();
+}
+
+/**
+ * Elimina un evento del calendario del CUM.
+ * @param {string} eventoId - ID del evento a eliminar
+ */
+export async function eliminarEvento(eventoId) {
+  comprobarCalendarioConfigurado();
+
+  const url = `${URL_BASE}/calendars/${encodeURIComponent(CALENDAR_ID)}/events/${encodeURIComponent(eventoId)}`;
+
+  const respuesta = await fetch(url, {
+    method: "DELETE",
+    headers: cabecerasAutenticadas(),
+  });
+
+  if (!respuesta.ok) {
+    const error = await respuesta.json().catch(() => ({}));
+    throw new Error(
+      error.error?.message || `Error al eliminar la reserva (${respuesta.status})`
+    );
+  }
 }

@@ -485,6 +485,22 @@ button:disabled {
   background: rgba(255, 255, 255, 0.26);
 }
 
+.btn--pequeno {
+  padding: 0.5rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.btn--peligro {
+  background: var(--color-error);
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(185, 28, 28, 0.35);
+}
+
+.btn--peligro:hover:not(:disabled) {
+  background: #991b1b;
+}
+
 /* Lista de reservas */
 .lista-reservas {
   list-style: none;
@@ -528,6 +544,14 @@ button:disabled {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--color-primario);
+}
+
+.lista-reservas__acciones {
+  display: flex;
+  gap: 0.6rem;
+  margin-top: 0.8rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid var(--color-borde);
 }
 
 .lista-reservas__vacia {

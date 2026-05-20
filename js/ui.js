@@ -13,6 +13,7 @@ export const elementos = {
   btnLogin: null,
   btnLogout: null,
   btnEnviar: null,
+  btnCancelarEdicion: null,
   usuarioNombre: null,
   estadoListado: null,
   listaReservas: null,
@@ -30,6 +31,7 @@ export function inicializarElementos() {
   elementos.btnLogin = document.getElementById("btn-login");
   elementos.btnLogout = document.getElementById("btn-logout");
   elementos.btnEnviar = document.getElementById("btn-enviar");
+  elementos.btnCancelarEdicion = document.getElementById("btn-cancelar-edicion");
   elementos.usuarioNombre = document.getElementById("usuario-nombre");
   elementos.estadoListado = document.getElementById("estado-listado");
   elementos.listaReservas = document.getElementById("lista-reservas");
@@ -103,11 +105,16 @@ export function limpiarFormulario() {
 
 /**
  * Pinta la lista de reservas en pantalla.
- * @param {Array<{ titulo: string, inicio: string, fin: string, descripcion?: string }>} reservas
+ * @param {Array<{ id: string, titulo: string, inicio: string, fin: string, descripcion?: string }>} reservas
+ * @param {string} [emailUsuario] - Email del usuario actual para mostrar botones de editar/cancelar
+ * @param {function} [onEditar] - Callback cuando se hace clic en editar
+ * @param {function} [onCancelar] - Callback cuando se hace clic en cancelar
  */
-export function renderizarListaReservas(reservas) {
+export function renderizarListaReservas(reservas, emailUsuario = null, onEditar = null, onCancelar = null) {
   const lista = elementos.listaReservas;
   lista.innerHTML = "";
+
+  console.log("📋 renderizarListaReservas - emailUsuario:", emailUsuario);
 
   if (!reservas.length) {
     const li = document.createElement("li");
@@ -118,22 +125,59 @@ export function renderizarListaReservas(reservas) {
     return;
   }
 
-  reservas.forEach((reserva) => {
+  reservas.forEach((reserva, idx) => {
     const li = document.createElement("li");
     li.className = "lista-reservas__item";
 
     const inicio = formatearFechaHora(reserva.inicio);
     const fin = formatearFechaHora(reserva.fin);
 
-    // Mostramos solo que la franja está ocupada sin detalles personales
-    // (nombre, email, motivo están privados en Google Calendar)
+    // Extraer email de la descripción para saber si es del usuario actual
+    const emailDelEvento = extraerEmailDelEvento(reserva.descripcion);
+    // Comparación case-insensitive para evitar problemas con mayúsculas/minúsculas
+    const esDelUsuario = emailUsuario && emailDelEvento &&
+                        emailDelEvento.toLowerCase() === emailUsuario.toLowerCase();
+
     li.innerHTML = `
       <h3>Franja ocupada</h3>
       <p class="lista-reservas__horario">${inicio} — ${fin}</p>
     `;
 
+    // Mostrar botones solo si es reserva del usuario actual
+    if (esDelUsuario) {
+      const divBotones = document.createElement("div");
+      divBotones.className = "lista-reservas__acciones";
+
+      const btnEditar = document.createElement("button");
+      btnEditar.type = "button";
+      btnEditar.className = "btn btn--pequeno btn--primario";
+      btnEditar.textContent = "Editar";
+      btnEditar.addEventListener("click", () => {
+        if (onEditar) onEditar(reserva);
+      });
+
+      const btnCancelar = document.createElement("button");
+      btnCancelar.type = "button";
+      btnCancelar.className = "btn btn--pequeno btn--peligro";
+      btnCancelar.textContent = "Cancelar";
+      btnCancelar.addEventListener("click", () => {
+        if (onCancelar) onCancelar(reserva);
+      });
+
+      divBotones.appendChild(btnEditar);
+      divBotones.appendChild(btnCancelar);
+      li.appendChild(divBotones);
+    }
+
     lista.appendChild(li);
   });
+}
+
+/** Extrae el email de la descripción del evento (formato: "Nombre: ...\nCorreo: email@example.com\nMotivo: ...") */
+function extraerEmailDelEvento(descripcion) {
+  if (!descripcion) return null;
+  const match = descripcion.match(/Correo:\s*([^\n]+)/);
+  return match ? match[1].trim() : null;
 }
 
 /** Formato legible en español para fechas ISO de Google */
@@ -150,6 +194,13 @@ function formatearFechaHora(iso) {
 /** Texto bajo el título del listado (cargando, error, etc.) */
 export function actualizarEstadoListado(texto) {
   elementos.estadoListado.textContent = texto;
+}
+
+/** Muestra u oculta el botón de cancelar edición */
+export function mostrarBotonCancelarEdicion(mostrar) {
+  if (elementos.btnCancelarEdicion) {
+    elementos.btnCancelarEdicion.hidden = !mostrar;
+  }
 }
 
 /** Evita que texto malicioso se interprete como HTML */

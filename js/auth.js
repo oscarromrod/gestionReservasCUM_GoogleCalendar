@@ -7,11 +7,12 @@
 
 import { GOOGLE_CLIENT_ID } from "./config.js";
 
-/** Permiso necesario para leer y crear eventos en Calendar */
-const ALCANCE_CALENDARIO = "https://www.googleapis.com/auth/calendar.events";
+/** Permisos necesarios: calendario y perfil de usuario */
+const ALCANCE_CALENDARIO = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
 
 let clienteToken = null;
 let tokenAcceso = null;
+let emailUsuarioActual = null;
 
 /**
  * Espera a que el script de Google (gsi/client) esté cargado en la página.
@@ -95,9 +96,11 @@ export function cerrarSesion() {
   if (tokenAcceso && window.google?.accounts?.oauth2) {
     google.accounts.oauth2.revoke(tokenAcceso, () => {
       tokenAcceso = null;
+      emailUsuarioActual = null;
     });
   } else {
     tokenAcceso = null;
+    emailUsuarioActual = null;
   }
 }
 
@@ -117,6 +120,7 @@ export function estaAutenticado() {
  */
 export async function obtenerPerfilUsuario() {
   const token = obtenerToken();
+  console.log("🔑 obtenerPerfilUsuario - Token:", token ? "✅ Existe" : "❌ No existe");
   if (!token) return null;
 
   const respuesta = await fetch(
@@ -126,6 +130,19 @@ export async function obtenerPerfilUsuario() {
     }
   );
 
-  if (!respuesta.ok) return null;
-  return respuesta.json();
+  if (!respuesta.ok) {
+    console.log("❌ Error al obtener perfil:", respuesta.status);
+    return null;
+  }
+  
+  const perfil = await respuesta.json();
+  // Guardamos el email para identificar reservas del usuario
+  emailUsuarioActual = perfil.email;
+  console.log("💾 Email guardado en auth.js:", emailUsuarioActual);
+  return perfil;
+}
+
+/** Devuelve el email del usuario actualmente autenticado */
+export function obtenerEmailUsuario() {
+  return emailUsuarioActual;
 }
