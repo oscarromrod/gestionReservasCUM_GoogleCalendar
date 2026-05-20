@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Reserva online de espacios del Centro de Usos Multiples del Ayuntamiento.">
-  <title>Reservas Centro de Usos Múltiples - Ayuntamiento</title>
+  <meta name="description" content="Gestiona tus reservas del Centro de Usos Múltiples del Ayuntamiento.">
+  <title>Mis reservas - Centro de Usos Múltiples</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="icon" href="assets/img/logo.png" type="image/png">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -16,15 +16,15 @@
     <div class="cabecera__textos">
       <p class="cabecera__ayuntamiento">Ayuntamiento de Moj&aacute;car</p>
       <h1>Centro de Usos M&uacute;ltiples</h1>
-      <p class="cabecera__subtitulo">Reserva de salas y espacios municipales</p>
+      <p class="cabecera__subtitulo">Gestiona tus reservas</p>
     </div>
     <div class="cabecera__logo">
       <img class="cabecera__escudo" src="assets/img/logo.png" width="400" height="100" alt="Logo del Ayuntamiento de Moj&aacute;car">
     </div>
     <div class="cabecera__auth">
       <nav class="cabecera__nav" aria-label="Navegación principal">
-        <a class="nav__link nav__link--activo" href="index.html">Inicio</a>
-        <a class="nav__link" href="mis-reservas.html">Mis reservas</a>
+        <a class="nav__link" href="index.html">Inicio</a>
+        <a class="nav__link nav__link--activo" href="mis-reservas.html">Mis reservas</a>
       </nav>
       <span id="usuario-nombre" class="usuario-nombre" hidden></span>
       <button type="button" id="btn-login" class="btn btn--secundario">Acceder con Google</button>
@@ -34,61 +34,26 @@
 
   <main id="contenido-principal" class="contenedor">
     <section class="intro" aria-labelledby="titulo-intro">
-      <h2 id="titulo-intro" class="intro__titulo">Reserva tu espacio de forma sencilla</h2>
+      <h2 id="titulo-intro" class="intro__titulo">Gestiona tus reservas activas</h2>
       <p class="intro__texto">
-        Consulta la disponibilidad del calendario municipal y solicita la reserva del Centro de Usos Múltiples
-        para actividades vecinales, asociaciones, talleres o reuniones.
+        Consulta, edita o cancela tus reservas del Centro de Usos Múltiples. Solo se muestran las reservas asociadas a tu cuenta.
       </p>
     </section>
 
     <div class="rejilla-principal">
       <aside class="lateral" aria-labelledby="titulo-como-reservar">
         <section class="tarjeta-info">
-          <h2 id="titulo-como-reservar" class="tarjeta-info__titulo">C&oacute;mo reservar</h2>
-          <ol class="pasos">
-            <li class="pasos__item">
-              <span class="pasos__numero" aria-hidden="true">1</span>
-              <div>
-                <strong>Accede con Google</strong>
-                <p>Usa tu cuenta de correo. Solo usuarios autorizados pueden gestionar reservas.</p>
-              </div>
-            </li>
-            <li class="pasos__item">
-              <span class="pasos__numero" aria-hidden="true">2</span>
-              <div>
-                <strong>Consulta el calendario</strong>
-                <p>Revisa las reservas ya confirmadas en los pr&oacute;ximos tres meses.</p>
-              </div>
-            </li>
-            <li class="pasos__item">
-              <span class="pasos__numero" aria-hidden="true">3</span>
-              <div>
-                <strong>Rellena el formulario</strong>
-                <p>Indica fecha, horario y motivo de la actividad.</p>
-              </div>
-            </li>
-            <li class="pasos__item">
-              <span class="pasos__numero" aria-hidden="true">4</span>
-              <div>
-                <strong>Confirma la solicitud</strong>
-                <p>Si el horario est&aacute; libre, la reserva se guarda en el calendario del Centro de Usos Múltiples.</p>
-              </div>
-            </li>
-          </ol>
-        </section>
-
-        <section class="tarjeta-info tarjeta-info--normas">
-          <h2 class="tarjeta-info__titulo">Normas de uso</h2>
+          <h2 id="titulo-como-reservar" class="tarjeta-info__titulo">Qué puedes hacer</h2>
           <ul class="lista-normas">
-            <li>Respeta el horario reservado; libera el espacio al finalizar.</li>
-            <li>No se permiten reservas en fechas u horas ya pasadas.</li>
-            <li>Un mismo tramo horario no puede reservarse dos veces.</li>
-            <li>El ayuntamiento puede anular reservas por causas de fuerza mayor.</li>
+            <li>Ver solo tus reservas confirmadas en los próximos tres meses.</li>
+            <li>Cancelar una reserva cuando ya no la necesites.</li>
+            <li>Editar fecha, hora y motivo de una reserva existente.</li>
+            <li>Tu nombre y correo permanecen ocultos en el calendario público.</li>
           </ul>
         </section>
 
         <section class="tarjeta-info tarjeta-info--contacto">
-          <h2 class="tarjeta-info__titulo">&iquest;Necesitas ayuda?</h2>
+          <h2 class="tarjeta-info__titulo">Ayuda</h2>
           <p class="tarjeta-info__texto">
             <strong>Atenci&oacute;n ciudadana</strong><br>
             Tel.: 950 615 009<br>
@@ -102,26 +67,21 @@
         <div id="mensaje-global" class="mensaje" role="alert" aria-live="assertive" aria-atomic="true" hidden></div>
 
         <div id="aviso-sesion" class="aviso-sesion" role="status">
-          <p><strong>Para reservar</strong>, primero debes acceder con tu cuenta de Google.</p>
+          <p><strong>Para ver tus reservas</strong>, primero debes acceder con tu cuenta de Google.</p>
         </div>
 
         <section class="panel" aria-labelledby="titulo-listado">
           <header class="panel__cabecera">
-            <h2 id="titulo-listado">Calendario de reservas</h2>
-            <p id="estado-listado" class="panel__ayuda" role="status" aria-live="polite">Accede con Google para consultar las reservas confirmadas.</p>
-            <p class="panel__ayuda panel__privacidad">
-              <strong>Privacidad:</strong> en este listado solo ver&aacute;s franjas ocupadas. Los datos personales del solicitante no se muestran aqu&iacute; ni en el calendario p&uacute;blico (solo los usa el ayuntamiento de forma interna).
-            </p>
+            <h2 id="titulo-listado">Mis reservas</h2>
+            <p id="estado-listado" class="panel__ayuda" role="status" aria-live="polite">Accede con Google para consultar tus reservas.</p>
           </header>
-          <div id="calendario-visual" class="calendario-visual" aria-live="polite" aria-label="Calendario visual de franjas ocupadas"></div>
+          <ul id="lista-reservas" class="lista-reservas"></ul>
         </section>
 
         <section class="panel panel--formulario" aria-labelledby="titulo-formulario">
           <header class="panel__cabecera">
-            <h2 id="titulo-formulario">Solicitud de reserva</h2>
-            <p class="panel__ayuda">
-              Los campos marcados con <span class="obligatorio" aria-hidden="true">*</span> son obligatorios.
-            </p>
+            <h2 id="titulo-formulario">Editar reserva</h2>
+            <p class="panel__ayuda">Selecciona una reserva para cargar sus datos en el formulario.</p>
           </header>
 
           <form id="form-reserva" class="formulario" novalidate>
@@ -164,10 +124,10 @@
               </label>
 
               <div class="formulario__acciones">
-                <button type="submit" id="btn-enviar" class="btn btn--primario" disabled>Confirmar reserva</button>
+                <button type="submit" id="btn-enviar" class="btn btn--primario" disabled>Actualizar reserva</button>
                 <button type="button" id="btn-cancelar-edicion" class="btn btn--secundario" hidden>Cancelar edición</button>
                 <p class="formulario__legal">
-                  Al enviar la solicitud, aceptas las normas de uso del Centro de Usos M&uacute;ltiples.
+                  Al actualizar una reserva, aceptas las normas de uso del Centro de Usos M&uacute;ltiples.
                 </p>
               </div>
             </fieldset>
@@ -186,6 +146,6 @@
     </div>
   </footer>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/mis-reservas.js"></script>
 </body>
 </html>

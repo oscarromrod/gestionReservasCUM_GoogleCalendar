@@ -7,12 +7,38 @@
 
 import { GOOGLE_CLIENT_ID } from "./config.js";
 
-/** Permisos necesarios: calendario y perfil de usuario */
-const ALCANCE_CALENDARIO = "https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile";
+/** Permisos necesarios: calendario completo y perfil de usuario */
+const ALCANCE_CALENDARIO = "openid email profile https://www.googleapis.com/auth/calendar";
+const STORAGE_TOKEN_KEY = "cum-google-calendar-token";
+const STORAGE_TOKEN_EXPIRY_KEY = "cum-google-calendar-token-expiry";
 
 let clienteToken = null;
 let tokenAcceso = null;
 let emailUsuarioActual = null;
+
+function guardarTokenLocal(token, expiresIn) {
+  if (!window?.localStorage) return;
+  localStorage.setItem(STORAGE_TOKEN_KEY, token);
+  const expiracion = Date.now() + expiresIn * 1000;
+  localStorage.setItem(STORAGE_TOKEN_EXPIRY_KEY, expiracion.toString());
+}
+
+function cargarTokenLocal() {
+  if (!window?.localStorage) return;
+  const token = localStorage.getItem(STORAGE_TOKEN_KEY);
+  const expiracion = Number(localStorage.getItem(STORAGE_TOKEN_EXPIRY_KEY));
+  if (!token || Number.isNaN(expiracion) || Date.now() >= expiracion) {
+    limpiarTokenLocal();
+    return;
+  }
+  tokenAcceso = token;
+}
+
+function limpiarTokenLocal() {
+  if (!window?.localStorage) return;
+  localStorage.removeItem(STORAGE_TOKEN_KEY);
+  localStorage.removeItem(STORAGE_TOKEN_EXPIRY_KEY);
+}
 
 /**
  * Espera a que el script de Google (gsi/client) esté cargado en la página.
@@ -67,6 +93,7 @@ function comprobarConfiguracion() {
 export async function inicializarAuth(alObtenerToken) {
   await esperarGoogle();
   comprobarConfiguracion();
+  cargarTokenLocal();
 
   clienteToken = google.accounts.oauth2.initTokenClient({
     client_id: GOOGLE_CLIENT_ID,
@@ -77,9 +104,16 @@ export async function inicializarAuth(alObtenerToken) {
         return;
       }
       tokenAcceso = respuesta.access_token;
+      if (respuesta.access_token) {
+        guardarTokenLocal(respuesta.access_token, Number(respuesta.expires_in || 3600));
+      }
       alObtenerToken(tokenAcceso);
     },
   });
+
+  if (tokenAcceso) {
+    alObtenerToken(tokenAcceso);
+  }
 }
 
 /** Abre el popup de Google para iniciar sesión */
@@ -87,8 +121,8 @@ export function iniciarSesion() {
   if (!clienteToken) {
     throw new Error("Auth no inicializado. Espera a que cargue la página.");
   }
-  // prompt vacío = Google decide si muestra login o renueva token
-  clienteToken.requestAccessToken();
+  // Forzamos el consentimiento para evitar que un token antiguo con scopes insuficientes siga activo.
+  clienteToken.requestAccessToken({ prompt: "consent" });
 }
 
 /** Cierra sesión y borra el token en memoria */
@@ -97,10 +131,12 @@ export function cerrarSesion() {
     google.accounts.oauth2.revoke(tokenAcceso, () => {
       tokenAcceso = null;
       emailUsuarioActual = null;
+      limpiarTokenLocal();
     });
   } else {
     tokenAcceso = null;
     emailUsuarioActual = null;
+    limpiarTokenLocal();
   }
 }
 

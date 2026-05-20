@@ -1,10 +1,3 @@
-/**
- * main.js — Punto de entrada de la aplicación
- * ---------------------------------------------
- * Este archivo "conecta" el resto: auth, calendario, validaciones y pantalla.
- * Cuando el navegador termina de cargar el HTML, ejecutamos iniciarApp().
- */
-
 import { inicializarAuth, iniciarSesion, cerrarSesion, obtenerPerfilUsuario, obtenerEmailUsuario } from "./auth.js";
 import { listarEventos, crearEvento, actualizarEvento, eliminarEvento } from "./calendar-api.js";
 import {
@@ -20,65 +13,72 @@ import {
   ocultarMensaje,
   leerDatosFormulario,
   limpiarFormulario,
-  renderizarCalendarioVisual,
-  limpiarCalendarioVisual,
+  renderizarListaReservas,
   actualizarEstadoListado,
   mostrarBotonCancelarEdicion,
   elementos,
 } from "./ui.js";
 
-/** Guardamos en memoria los eventos del calendario para comprobar conflictos */
 let eventosActuales = [];
 
-/**
- * Recarga la lista de reservas desde Google y la muestra en pantalla.
- */
-async function cargarReservas() {
+const modoEdicion = {
+  activo: false,
+  eventoId: null,
+  datos: null,
+};
+
+async function cargarReservasUsuario() {
   try {
-    actualizarEstadoListado("Cargando reservas...");
+    actualizarEstadoListado("Cargando tus reservas...");
     const { timeMin, timeMax } = obtenerRangoConsulta();
     eventosActuales = await listarEventos(timeMin, timeMax);
     const emailUsuario = obtenerEmailUsuario();
-    console.log("🔐 Email del usuario actual:", emailUsuario);
-    renderizarCalendarioVisual(eventosActuales);
-    const n = eventosActuales.length;
+    const reservasUsuario = eventosActuales.filter((reserva) => {
+      const email = extraerEmailDelEvento(reserva.descripcion);
+      return (
+        emailUsuario &&
+        email &&
+        email.toLowerCase() === emailUsuario.toLowerCase()
+      );
+    });
+
+    renderizarListaReservas(
+      reservasUsuario,
+      emailUsuario,
+      manejarEditarReserva,
+      manejarCancelarReserva
+    );
+
+    const n = reservasUsuario.length;
     actualizarEstadoListado(
       n === 0
-        ? "No hay reservas en los próximos tres meses."
-        : `${n} reserva${n === 1 ? "" : "s"} confirmada${n === 1 ? "" : "s"} en los próximos tres meses.`
+        ? "No tienes reservas en los próximos tres meses."
+        : `Tienes ${n} reserva${n === 1 ? "" : "s"} en los próximos tres meses.`
     );
   } catch (error) {
     console.error(error);
-    actualizarEstadoListado("No se pudieron cargar las reservas.");
+    actualizarEstadoListado("No se pudieron cargar tus reservas.");
     mostrarMensaje(error.message, "error");
   }
 }
 
-/**
- * Se ejecuta cuando el usuario inicia sesión correctamente.
- */
 async function alConectar() {
   try {
-    console.log("🔐 alConectar() llamado");
     const perfil = await obtenerPerfilUsuario();
-    console.log("👤 Perfil obtenido:", perfil);
     const nombre = perfil?.name || perfil?.email || "Usuario";
     actualizarEstadoAuth(true, nombre);
     ocultarMensaje();
     mostrarMensaje(
-      "Acceso correcto. Ya puedes consultar el calendario y confirmar tu reserva.",
+      "Acceso correcto. Ya puedes ver y gestionar tus reservas.",
       "exito"
     );
-    await cargarReservas();
+    await cargarReservasUsuario();
   } catch (error) {
     console.error(error);
     mostrarMensaje(error.message, "error");
   }
 }
 
-/**
- * Envío del formulario: validar → comprobar conflictos → crear en Google.
- */
 async function manejarEnvioFormulario(evento) {
   evento.preventDefault();
   ocultarMensaje();
@@ -96,12 +96,9 @@ async function manejarEnvioFormulario(evento) {
     fin: validacion.fin,
   };
 
-  // Si estamos en modo edición, permitir cambios sin verificar conflictos con el evento actual
   if (modoEdicion.activo) {
     try {
       elementos.btnEnviar.disabled = true;
-
-      // Actualizar datos personales si cambió el motivo
       const datosActualizados = { ...modoEdicion.datos, motivo: datos.motivo };
       const eventoActualizado = construirEventoGoogle(
         datosActualizados,
@@ -112,20 +109,8 @@ async function manejarEnvioFormulario(evento) {
       await actualizarEvento(modoEdicion.eventoId, eventoActualizado);
       limpiarFormulario();
       mostrarMensaje("Reserva actualizada correctamente.", "exito");
-
-      // Salir de modo edición
-      modoEdicion.activo = false;
-      modoEdicion.eventoId = null;
-      modoEdicion.datos = null;
-
-      // Rehabilitar campos de nombre y email
-      document.getElementById("nombre").disabled = false;
-      document.getElementById("email").disabled = false;
-
-      // Ocultar botón de cancelar edición
-      mostrarBotonCancelarEdicion(false);
-
-      await cargarReservas();
+      cancelarEdicion();
+      await cargarReservasUsuario();
     } catch (error) {
       console.error(error);
       mostrarMensaje(error.message, "error");
@@ -135,10 +120,9 @@ async function manejarEnvioFormulario(evento) {
     return;
   }
 
-  // Modo normal: crear nueva reserva
   if (hayConflictoConEventos(nuevaReserva, eventosActuales)) {
     mostrarMensaje(
-      "Ese horario ya está reservado. Consulta el calendario y elige otra franja.",
+      "Ese horario ya está reservado. Consulta tus reservas o el calendario y elige otra franja.",
       "error"
     );
     return;
@@ -146,19 +130,11 @@ async function manejarEnvioFormulario(evento) {
 
   try {
     elementos.btnEnviar.disabled = true;
-    const eventoGoogle = construirEventoGoogle(
-      datos,
-      validacion.inicio,
-      validacion.fin
-    );
-
+    const eventoGoogle = construirEventoGoogle(datos, validacion.inicio, validacion.fin);
     await crearEvento(eventoGoogle);
     limpiarFormulario();
-    mostrarMensaje(
-      "Reserva confirmada.",
-      "exito"
-    );
-    await cargarReservas();
+    mostrarMensaje("Reserva confirmada.", "exito");
+    await cargarReservasUsuario();
   } catch (error) {
     console.error(error);
     mostrarMensaje(error.message, "error");
@@ -167,74 +143,48 @@ async function manejarEnvioFormulario(evento) {
   }
 }
 
-/**
- * Maneja la edición de una reserva existente.
- */
 async function manejarEditarReserva(reserva) {
   ocultarMensaje();
 
-  // Extraer datos del evento
   const { inicio, fin } = extraerDatosDelEvento(reserva);
-
   if (!inicio || !fin) {
     mostrarMensaje("No se pudieron cargar los datos de la reserva.", "error");
     return;
   }
 
-  // Extraer datos de la descripción primero
   const datosDescripcion = extraerDatosDelDescripcion(reserva.descripcion);
-
-  // Guardar referencia al evento para actualizar después
   modoEdicion.activo = true;
   modoEdicion.eventoId = reserva.id;
   modoEdicion.datos = datosDescripcion;
 
-  // Rellenar el formulario con los datos actuales
   document.getElementById("fecha").value = inicio.toISOString().split("T")[0];
   document.getElementById("hora-inicio").value = inicio.toTimeString().slice(0, 5);
   document.getElementById("hora-fin").value = fin.toTimeString().slice(0, 5);
-
-  // Rellenar también nombre y email (pero deshabilitados para que no se puedan cambiar)
   document.getElementById("nombre").value = datosDescripcion.nombre || "";
   document.getElementById("email").value = datosDescripcion.email || "";
   document.getElementById("motivo").value = datosDescripcion.motivo || "";
 
-  mostrarMensaje("Edita la información y confirma para actualizar tu reserva. (Los datos personales no se pueden cambiar)", "info");
-
-  // Deshabilitar campos de nombre y email para que no se puedan cambiar
   document.getElementById("nombre").disabled = true;
   document.getElementById("email").disabled = true;
-
-  // Mostrar botón de cancelar edición
   mostrarBotonCancelarEdicion(true);
-
-  // Scroll al formulario
+  mostrarMensaje(
+    "Edita la información y confirma para actualizar tu reserva. Los datos personales no se pueden cambiar.",
+    "info"
+  );
   document.getElementById("form-reserva").scrollIntoView({ behavior: "smooth" });
 }
 
-/**
- * Cancela el modo de edición y limpia el formulario.
- */
 function cancelarEdicion() {
   modoEdicion.activo = false;
   modoEdicion.eventoId = null;
   modoEdicion.datos = null;
-
-  // Rehabilitar campos de nombre y email
   document.getElementById("nombre").disabled = false;
   document.getElementById("email").disabled = false;
-
-  // Ocultar botón de cancelar edición
   mostrarBotonCancelarEdicion(false);
-
-  // Limpiar formulario
   limpiarFormulario();
   ocultarMensaje();
 }
 
-/**
- * Maneja la cancelación de una reserva.
- */
 async function manejarCancelarReserva(reserva) {
   if (!confirm("¿Estás seguro de que quieres cancelar esta reserva? Esta acción no se puede deshacer.")) {
     return;
@@ -244,24 +194,16 @@ async function manejarCancelarReserva(reserva) {
     mostrarMensaje("Cancelando reserva...", "info");
     await eliminarEvento(reserva.id);
     mostrarMensaje("Reserva cancelada correctamente.", "exito");
-    await cargarReservas();
+    await cargarReservasUsuario();
   } catch (error) {
     console.error(error);
     mostrarMensaje(error.message, "error");
   }
 }
 
-/** Objeto para controlar si estamos en modo edición */
-const modoEdicion = {
-  activo: false,
-  eventoId: null,
-  datos: null,
-};
-
-/** Extrae nombre, email y motivo de la descripción del evento */
 function extraerDatosDelDescripcion(descripcion) {
   if (!descripcion) return {};
-  
+
   const datosNombre = descripcion.match(/Nombre:\s*([^\n]+)/);
   const datosEmail = descripcion.match(/Correo:\s*([^\n]+)/);
   const datosMotivo = descripcion.match(/Motivo:\s*([^\n]+)/);
@@ -273,21 +215,21 @@ function extraerDatosDelDescripcion(descripcion) {
   };
 }
 
-/** Extrae fechas de inicio y fin del evento */
+function extraerEmailDelEvento(descripcion) {
+  if (!descripcion) return null;
+  const match = descripcion.match(/Correo:\s*([^\n]+)/);
+  return match ? match[1].trim() : null;
+}
+
 function extraerDatosDelEvento(reserva) {
   const inicio = new Date(reserva.inicio);
   const fin = new Date(reserva.fin);
-  
   if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) {
     return { inicio: null, fin: null };
   }
-
   return { inicio, fin };
 }
 
-/**
- * Configura botones y formulario.
- */
 function enlazarEventos() {
   elementos.btnLogin.addEventListener("click", () => {
     try {
@@ -301,27 +243,20 @@ function enlazarEventos() {
     cerrarSesion();
     eventosActuales = [];
     actualizarEstadoAuth(false);
-    limpiarCalendarioVisual();
-    actualizarEstadoListado(
-      "Accede con Google para consultar las reservas confirmadas."
-    );
+    renderizarListaReservas([]);
+    actualizarEstadoListado("Accede con Google para consultar tus reservas.");
     mostrarMensaje("Has cerrado la sesión correctamente.", "info");
   });
 
   elementos.btnCancelarEdicion.addEventListener("click", cancelarEdicion);
-
   elementos.formulario.addEventListener("submit", manejarEnvioFormulario);
 }
 
-/**
- * Arranque: cuando el DOM está listo.
- */
 async function iniciarApp() {
   inicializarElementos();
   enlazarEventos();
   actualizarEstadoAuth(false);
 
-  // Fecha mínima del input date = hoy
   const inputFecha = document.getElementById("fecha");
   const hoy = new Date().toISOString().split("T")[0];
   inputFecha.min = hoy;
@@ -334,5 +269,4 @@ async function iniciarApp() {
   }
 }
 
-// DOMContentLoaded = "el HTML ya está cargado, puedes usar getElementById"
 document.addEventListener("DOMContentLoaded", iniciarApp);

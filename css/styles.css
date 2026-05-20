@@ -150,6 +150,32 @@ body.sesion-activa .aviso-sesion {
   flex-wrap: wrap;
 }
 
+.cabecera__nav {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.nav__link {
+  text-decoration: none;
+  color: #fff;
+  padding: 0.55rem 0.8rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.nav__link:hover,
+.nav__link:focus-visible {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.nav__link--activo {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 .usuario-nombre {
   font-size: 0.88rem;
   background: rgba(255, 255, 255, 0.12);
@@ -434,6 +460,13 @@ textarea:focus {
   box-shadow: 0 0 0 3px rgba(90, 159, 212, 0.25);
 }
 
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--color-acento);
+  outline-offset: 4px;
+}
+
 input:disabled,
 textarea:disabled,
 button:disabled {
@@ -476,13 +509,13 @@ button:disabled {
 }
 
 .btn--secundario {
-  background: rgba(255, 255, 255, 0.14);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: #ffffff;
+  color: var(--color-primario);
+  border: 1px solid var(--color-primario);
 }
 
 .btn--secundario:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.26);
+  background: #f0f7ff;
 }
 
 .btn--pequeno {
@@ -499,6 +532,112 @@ button:disabled {
 
 .btn--peligro:hover:not(:disabled) {
   background: #991b1b;
+}
+
+/* Calendario visual */
+.calendario-visual {
+  display: flex;
+  gap: 0.9rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+}
+
+.calendario-visual__grilla {
+  display: flex;
+  gap: 0.9rem;
+  width: 100%;
+}
+
+.calendario-visual__dia {
+  min-width: 150px;
+  background: var(--color-superficie);
+  border: 1px solid var(--color-borde);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendario-visual__cabecera {
+  padding: 1rem;
+  border-bottom: 1px solid var(--color-borde);
+  background: var(--color-primario-claro);
+  color: var(--color-primario);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.calendario-visual__cabecera strong {
+  font-size: 0.95rem;
+}
+
+.calendario-visual__cabecera span {
+  font-size: 0.82rem;
+  color: var(--color-texto-suave);
+}
+
+.calendario-visual__pista {
+  min-height: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.9rem 0.75rem;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent calc(100% / 24 - 1px),
+    rgba(0, 0, 0, 0.04) calc(100% / 24 - 1px),
+    rgba(0, 0, 0, 0.04) calc(100% / 24)
+  );
+  background-size: 100% 24px;
+}
+
+.calendario-visual__dia-vacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-texto-suave);
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 0.85rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.calendario-visual__evento {
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: var(--color-acento);
+  color: #1e293b;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  min-height: 56px;
+}
+
+.calendario-visual__evento:hover,
+.calendario-visual__evento:focus-visible {
+  outline: 3px solid rgba(90, 159, 212, 0.35);
+}
+
+.calendario-visual__evento-hora {
+  font-weight: 700;
+}
+
+.calendario-visual__evento-texto {
+  line-height: 1.25;
+}
+
+.calendario-visual__vacio {
+  padding: 1.1rem;
+  color: var(--color-texto-suave);
+  background: var(--color-superficie);
+  border-radius: var(--radio);
+  border: 1px dashed var(--color-borde);
+  text-align: center;
 }
 
 /* Lista de reservas */

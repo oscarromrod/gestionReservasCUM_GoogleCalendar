@@ -17,6 +17,7 @@ export const elementos = {
   usuarioNombre: null,
   estadoListado: null,
   listaReservas: null,
+  calendarioVisual: null,
 };
 
 /**
@@ -35,6 +36,7 @@ export function inicializarElementos() {
   elementos.usuarioNombre = document.getElementById("usuario-nombre");
   elementos.estadoListado = document.getElementById("estado-listado");
   elementos.listaReservas = document.getElementById("lista-reservas");
+  elementos.calendarioVisual = document.getElementById("calendario-visual");
 }
 
 /**
@@ -49,6 +51,10 @@ export function mostrarMensaje(texto, tipo = "info") {
   caja.textContent = texto;
   caja.className = `mensaje mensaje--${tipo}`;
   caja.hidden = false;
+
+  if (tipo === "error" || tipo === "aviso") {
+    caja.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
 }
 
 /** Oculta el mensaje global */
@@ -171,6 +177,92 @@ export function renderizarListaReservas(reservas, emailUsuario = null, onEditar 
 
     lista.appendChild(li);
   });
+}
+
+/** Renderiza un calendario visual con las franjas ocupadas de la semana siguiente. */
+export function renderizarCalendarioVisual(reservas) {
+  const contenedor = elementos.calendarioVisual;
+  if (!contenedor) return;
+  contenedor.innerHTML = "";
+
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  const dias = Array.from({ length: 7 }, (_, indice) => {
+    const dia = new Date(hoy.getTime() + indice * 24 * 60 * 60 * 1000);
+    return dia;
+  });
+
+  if (!reservas.length) {
+    contenedor.innerHTML = `<div class="calendario-visual__vacio">No hay reservas confirmadas en los próximos siete días.</div>`;
+    return;
+  }
+
+  const diaSemanal = document.createElement("div");
+  diaSemanal.className = "calendario-visual__grilla";
+
+  dias.forEach((dia) => {
+    const columna = document.createElement("section");
+    columna.className = "calendario-visual__dia";
+    columna.setAttribute("aria-label", `Reservas para ${dia.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" })}`);
+
+    const cabecera = document.createElement("div");
+    cabecera.className = "calendario-visual__cabecera";
+    cabecera.innerHTML = `
+      <strong>${dia.toLocaleDateString("es-ES", { weekday: "short" })}</strong>
+      <span>${dia.toLocaleDateString("es-ES", { day: "numeric", month: "short" })}</span>
+    `;
+
+    const pista = document.createElement("div");
+    pista.className = "calendario-visual__pista";
+
+    const fechaKey = dia.toISOString().slice(0, 10);
+    const eventosDelDia = reservas
+      .filter((reserva) => reserva.inicio.slice(0, 10) === fechaKey)
+      .sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
+
+    if (!eventosDelDia.length) {
+      const vacio = document.createElement("div");
+      vacio.className = "calendario-visual__dia-vacio";
+      vacio.textContent = "Libre";
+      pista.appendChild(vacio);
+    } else {
+      eventosDelDia.forEach((reserva) => {
+        const inicio = new Date(reserva.inicio);
+        const fin = new Date(reserva.fin);
+
+        const evento = document.createElement("div");
+        evento.className = "calendario-visual__evento";
+        evento.innerHTML = `
+          <span class="calendario-visual__evento-hora">${inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} — ${fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</span>
+        `;
+        evento.setAttribute("role", "button");
+        evento.setAttribute("tabindex", "0");
+        evento.setAttribute(
+          "aria-label",
+          `Horario ocupado de ${inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} a ${fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`
+        );
+        pista.appendChild(evento);
+      });
+    }
+
+    columna.appendChild(cabecera);
+    columna.appendChild(pista);
+    diaSemanal.appendChild(columna);
+  });
+
+  contenedor.appendChild(diaSemanal);
+}
+
+export function limpiarCalendarioVisual() {
+  if (elementos.calendarioVisual) {
+    elementos.calendarioVisual.innerHTML = "";
+  }
+}
+
+function extraerMotivoDelEvento(descripcion) {
+  if (!descripcion) return "Reserva ocupada";
+  const datosMotivo = descripcion.match(/Motivo:\s*([^\n]+)/);
+  return datosMotivo ? datosMotivo[1].trim() : "Reserva ocupada";
 }
 
 /** Extrae el email de la descripción del evento (formato: "Nombre: ...\nCorreo: email@example.com\nMotivo: ...") */
