@@ -149,7 +149,8 @@
               <div class="formulario__fila formulario__fila--horario">
                 <label class="formulario__campo">
                   <span>Fecha de la reserva <span class="obligatorio">*</span></span>
-                  <input type="date" id="fecha" name="fecha" required>
+                  <input type="date" id="fecha" name="fecha" required aria-describedby="fecha-pista">
+                  <small id="fecha-pista" class="formulario__pista">Solo se puede reservar hasta tres meses desde hoy.</small>
                 </label>
                 <label class="formulario__campo">
                   <span>Hora de inicio <span class="obligatorio">*</span></span>

@@ -12,6 +12,7 @@ import {
   hayConflictoConEventos,
   construirEventoGoogle,
   obtenerRangoConsulta,
+  obtenerFechaLimiteReserva,
 } from "./reservas.js";
 import {
   inicializarElementos,
@@ -396,10 +397,11 @@ async function iniciarApp() {
   enlazarEventos();
   actualizarEstadoAuth(false);
 
-  // Fecha mínima del input date = hoy
+  // Fecha mínima del input date = hoy, máxima = tres meses desde hoy
   const inputFecha = document.getElementById("fecha");
   const hoy = new Date().toISOString().split("T")[0];
   inputFecha.min = hoy;
+  inputFecha.max = obtenerFechaLimiteReserva().toISOString().split("T")[0];
 
   try {
     await inicializarAuth(alConectar);

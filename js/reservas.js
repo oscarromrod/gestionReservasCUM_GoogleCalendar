@@ -47,7 +47,23 @@ export function validarDatosReserva(datos) {
     };
   }
 
+  const fechaLimite = obtenerFechaLimiteReserva();
+  if (inicio > fechaLimite) {
+    return {
+      valido: false,
+      mensaje: "Solo puedes reservar hasta tres meses desde hoy.",
+    };
+  }
+
   return { valido: true, inicio, fin };
+}
+
+export function obtenerFechaLimiteReserva() {
+  const fechaLimite = new Date();
+  fechaLimite.setHours(0, 0, 0, 0);
+  fechaLimite.setMonth(fechaLimite.getMonth() + 3);
+  fechaLimite.setHours(23, 59, 59, 999);
+  return fechaLimite;
 }
 
 /**
