@@ -536,91 +536,150 @@ button:disabled {
 
 /* Calendario visual */
 .calendario-visual {
-  display: flex;
-  gap: 0.9rem;
-  overflow-x: auto;
+  display: block;
+  overflow-x: hidden;
+  width: 100%;
   padding-bottom: 0.5rem;
 }
 
-.calendario-visual__grilla {
+.calendario-navegacion {
   display: flex;
-  gap: 0.9rem;
-  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
-.calendario-visual__dia {
-  min-width: 150px;
+.calendario-navegacion__titulo {
+  font-weight: 700;
+  color: var(--color-primario);
+  text-transform: capitalize;
+}
+
+.btn--icon {
+  padding: 0.65rem 0.85rem;
+  min-width: 2.6rem;
+  border-radius: 12px;
+}
+
+.calendario-visual__mes {
+  width: 100%;
   background: var(--color-superficie);
   border: 1px solid var(--color-borde);
-  border-radius: 16px;
+  border-radius: 18px;
+  box-shadow: var(--sombra-suave);
   overflow: hidden;
-  display: flex;
-  flex-direction: column;
 }
 
-.calendario-visual__cabecera {
-  padding: 1rem;
+.calendario-visual__mes-titulo {
+  padding: 0.9rem 1rem;
   border-bottom: 1px solid var(--color-borde);
   background: var(--color-primario-claro);
   color: var(--color-primario);
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.calendario-visual__cabecera strong {
   font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: capitalize;
 }
 
-.calendario-visual__cabecera span {
-  font-size: 0.82rem;
-  color: var(--color-texto-suave);
+.calendario-visual__fila-dias {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  border-bottom: 1px solid var(--color-borde);
+  background: var(--color-primario-claro);
 }
 
-.calendario-visual__pista {
-  min-height: 380px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.9rem 0.75rem;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    transparent calc(100% / 24 - 1px),
-    rgba(0, 0, 0, 0.04) calc(100% / 24 - 1px),
-    rgba(0, 0, 0, 0.04) calc(100% / 24)
-  );
-  background-size: 100% 24px;
-}
-
-.calendario-visual__dia-vacio {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-texto-suave);
-  font-size: 0.95rem;
+.calendario-visual__nombre-dia {
+  padding: 0.65rem 0.55rem;
   text-align: center;
-  padding: 0.85rem;
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.82);
+  font-size: 0.78rem;
+  color: var(--color-texto-suave);
+  border-right: 1px solid var(--color-borde);
 }
 
-.calendario-visual__evento {
-  border-radius: 14px;
-  padding: 0.75rem;
-  background: var(--color-acento);
-  color: #1e293b;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+.calendario-visual__nombre-dia:last-child {
+  border-right: none;
+}
+
+.calendario-visual__grilla-mes {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 1px;
+}
+
+.calendario-visual__dia-mes {
+  min-height: 150px;
+  min-width: 0;
+  border-right: 1px solid var(--color-borde);
+  border-bottom: 1px solid var(--color-borde);
+  padding: 0.85rem;
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.88rem;
-  min-height: 56px;
+  gap: 0.5rem;
+  background: var(--color-superficie);
 }
 
-.calendario-visual__evento:hover,
-.calendario-visual__evento:focus-visible {
+.calendario-visual__dia-mes:nth-child(7n) {
+  border-right: none;
+}
+
+.calendario-visual__dia-mes--fuera {
+  background: #f8fafc;
+  color: var(--color-texto-suave);
+}
+
+.calendario-visual__dia-mes--vacío {
+  min-height: 0;
+  border: none;
+  background: transparent;
+}
+
+.calendario-visual__dia-mes-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.calendario-visual__numero {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.calendario-visual__eventos-mes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.calendario-visual__dia-mes-vacio {
+  color: var(--color-texto-suave);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  padding-top: 0.2rem;
+}
+
+.calendario-visual__evento-mes {
+  border-radius: 14px;
+  padding: 0.55rem;
+  background: rgba(90, 159, 212, 0.12);
+  color: var(--color-texto);
+  border: 1px solid rgba(90, 159, 212, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  min-height: 48px;
+}
+
+.calendario-visual__evento-mes:hover,
+.calendario-visual__evento-mes:focus-visible {
   outline: 3px solid rgba(90, 159, 212, 0.35);
+}
+
+.calendario-visual__dia-mes-resumen {
+  margin-top: auto;
+  font-size: 0.8rem;
+  color: var(--color-texto-suave);
 }
 
 .calendario-visual__evento-hora {

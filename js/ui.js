@@ -18,6 +18,9 @@ export const elementos = {
   estadoListado: null,
   listaReservas: null,
   calendarioVisual: null,
+  calendarioPrev: null,
+  calendarioNext: null,
+  calendarioMesActual: null,
 };
 
 /**
@@ -37,6 +40,9 @@ export function inicializarElementos() {
   elementos.estadoListado = document.getElementById("estado-listado");
   elementos.listaReservas = document.getElementById("lista-reservas");
   elementos.calendarioVisual = document.getElementById("calendario-visual");
+  elementos.calendarioPrev = document.getElementById("calendario-prev");
+  elementos.calendarioNext = document.getElementById("calendario-next");
+  elementos.calendarioMesActual = document.getElementById("calendario-mes-actual");
 }
 
 /**
@@ -109,6 +115,25 @@ export function limpiarFormulario() {
   elementos.formulario.reset();
 }
 
+function obtenerClaveFechaLocal(fecha) {
+  return `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}-${String(fecha.getDate()).padStart(2, "0")}`;
+}
+
+function obtenerDiasDeCalendario(fechaReferencia) {
+  const inicio = new Date(fechaReferencia);
+  inicio.setHours(0, 0, 0, 0);
+  const finMes = new Date(inicio.getFullYear(), inicio.getMonth() + 1, 0);
+
+  const primerDiaSemana = (inicio.getDay() + 6) % 7;
+  const dias = Array.from({ length: primerDiaSemana }, () => null);
+
+  for (let dia = new Date(inicio); dia <= finMes; dia.setDate(dia.getDate() + 1)) {
+    dias.push(new Date(dia));
+  }
+
+  return dias;
+}
+
 /**
  * Pinta la lista de reservas en pantalla.
  * @param {Array<{ id: string, titulo: string, inicio: string, fin: string, descripcion?: string }>} reservas
@@ -179,78 +204,139 @@ export function renderizarListaReservas(reservas, emailUsuario = null, onEditar 
   });
 }
 
-/** Renderiza un calendario visual con las franjas ocupadas de la semana siguiente. */
-export function renderizarCalendarioVisual(reservas) {
+/** Renderiza un calendario visual con las franjas ocupadas del mes actual. */
+export function renderizarCalendarioVisual(reservas, fechaReferencia = new Date()) {
   const contenedor = elementos.calendarioVisual;
   if (!contenedor) return;
   contenedor.innerHTML = "";
 
   const hoy = new Date();
   hoy.setHours(0, 0, 0, 0);
-  const dias = Array.from({ length: 7 }, (_, indice) => {
-    const dia = new Date(hoy.getTime() + indice * 24 * 60 * 60 * 1000);
-    return dia;
+
+  const mesSeleccionado = new Date(fechaReferencia);
+  mesSeleccionado.setHours(0, 0, 0, 0);
+
+  const esMesActual =
+    mesSeleccionado.getFullYear() === hoy.getFullYear() &&
+    mesSeleccionado.getMonth() === hoy.getMonth();
+
+  const inicio = esMesActual
+    ? hoy
+    : new Date(mesSeleccionado.getFullYear(), mesSeleccionado.getMonth(), 1);
+
+  const diasCalendario = obtenerDiasDeCalendario(inicio);
+
+  const eventosPorFecha = reservas.reduce((acumulador, reserva) => {
+    const inicio = new Date(reserva.inicio);
+    const clave = obtenerClaveFechaLocal(inicio);
+    acumulador[clave] = acumulador[clave] || [];
+    acumulador[clave].push(reserva);
+    return acumulador;
+  }, {});
+
+  Object.values(eventosPorFecha).forEach((eventos) => {
+    eventos.sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
   });
 
-  if (!reservas.length) {
-    contenedor.innerHTML = `<div class="calendario-visual__vacio">No hay reservas confirmadas en los próximos siete días.</div>`;
-    return;
+  const calendario = document.createElement("div");
+  calendario.className = "calendario-visual__mes";
+
+  const nombreMes = `${mesSeleccionado.toLocaleDateString("es-ES", {
+    month: "long",
+    year: "numeric",
+  })}${esMesActual ? " — Desde hoy" : ""}`;
+
+  if (elementos.calendarioMesActual) {
+    elementos.calendarioMesActual.textContent = nombreMes;
   }
 
-  const diaSemanal = document.createElement("div");
-  diaSemanal.className = "calendario-visual__grilla";
+  const nombresSemana = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-  dias.forEach((dia) => {
-    const columna = document.createElement("section");
-    columna.className = "calendario-visual__dia";
-    columna.setAttribute("aria-label", `Reservas para ${dia.toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "short" })}`);
+  const filaNombres = document.createElement("div");
+  filaNombres.className = "calendario-visual__fila-dias";
+  nombresSemana.forEach((nombre) => {
+    const celdaNombre = document.createElement("div");
+    celdaNombre.className = "calendario-visual__nombre-dia";
+    celdaNombre.textContent = nombre;
+    filaNombres.appendChild(celdaNombre);
+  });
+  calendario.appendChild(filaNombres);
 
-    const cabecera = document.createElement("div");
-    cabecera.className = "calendario-visual__cabecera";
-    cabecera.innerHTML = `
-      <strong>${dia.toLocaleDateString("es-ES", { weekday: "short" })}</strong>
-      <span>${dia.toLocaleDateString("es-ES", { day: "numeric", month: "short" })}</span>
-    `;
+  const grilla = document.createElement("div");
+  grilla.className = "calendario-visual__grilla-mes";
 
-    const pista = document.createElement("div");
-    pista.className = "calendario-visual__pista";
+  diasCalendario.forEach((dia) => {
+    if (dia === null) {
+      const celdaVacia = document.createElement("article");
+      celdaVacia.className = "calendario-visual__dia-mes calendario-visual__dia-mes--vacío";
+      grilla.appendChild(celdaVacia);
+      return;
+    }
 
-    const fechaKey = dia.toISOString().slice(0, 10);
-    const eventosDelDia = reservas
-      .filter((reserva) => reserva.inicio.slice(0, 10) === fechaKey)
-      .sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
+    const fechaKey = obtenerClaveFechaLocal(dia);
+    const eventosDelDia = eventosPorFecha[fechaKey] || [];
+
+    const diaCelda = document.createElement("article");
+    diaCelda.className = "calendario-visual__dia-mes";
+    diaCelda.setAttribute(
+      "aria-label",
+      `${dia.toLocaleDateString("es-ES", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })}`
+    );
+
+    const cabeceraDia = document.createElement("header");
+    cabeceraDia.className = "calendario-visual__dia-mes-cabecera";
+    cabeceraDia.innerHTML = `<span class="calendario-visual__numero">${dia.getDate()}</span>`;
+    diaCelda.appendChild(cabeceraDia);
+
+    const eventosContenedor = document.createElement("div");
+    eventosContenedor.className = "calendario-visual__eventos-mes";
 
     if (!eventosDelDia.length) {
       const vacio = document.createElement("div");
-      vacio.className = "calendario-visual__dia-vacio";
+      vacio.className = "calendario-visual__dia-mes-vacio";
       vacio.textContent = "Libre";
-      pista.appendChild(vacio);
+      eventosContenedor.appendChild(vacio);
     } else {
-      eventosDelDia.forEach((reserva) => {
+      eventosDelDia.slice(0, 2).forEach((reserva) => {
         const inicio = new Date(reserva.inicio);
         const fin = new Date(reserva.fin);
 
         const evento = document.createElement("div");
-        evento.className = "calendario-visual__evento";
-        evento.innerHTML = `
-          <span class="calendario-visual__evento-hora">${inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} — ${fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</span>
-        `;
+        evento.className = "calendario-visual__evento-mes";
         evento.setAttribute("role", "button");
         evento.setAttribute("tabindex", "0");
         evento.setAttribute(
           "aria-label",
           `Horario ocupado de ${inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} a ${fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`
         );
-        pista.appendChild(evento);
+
+        evento.innerHTML = `
+          <span class="calendario-visual__evento-hora">${inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} — ${fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</span>
+          <span class="calendario-visual__evento-texto">Ocupado</span>
+        `;
+
+        eventosContenedor.appendChild(evento);
       });
+
+      if (eventosDelDia.length > 2) {
+        const resto = document.createElement("div");
+        resto.className = "calendario-visual__dia-mes-resumen";
+        resto.textContent = `+ ${eventosDelDia.length - 2} reserva${eventosDelDia.length - 2 === 1 ? "" : "s"} más`;
+        eventosContenedor.appendChild(resto);
+      }
     }
 
-    columna.appendChild(cabecera);
-    columna.appendChild(pista);
-    diaSemanal.appendChild(columna);
+    diaCelda.appendChild(eventosContenedor);
+    grilla.appendChild(diaCelda);
   });
 
-  contenedor.appendChild(diaSemanal);
+  calendario.appendChild(grilla);
+  contenedor.appendChild(calendario);
 }
 
 export function limpiarCalendarioVisual() {

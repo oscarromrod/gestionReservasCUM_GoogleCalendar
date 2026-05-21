@@ -29,6 +29,9 @@ import {
 
 /** Guardamos en memoria los eventos del calendario para comprobar conflictos */
 let eventosActuales = [];
+let mesVisible = new Date();
+mesVisible.setDate(1);
+mesVisible.setHours(0, 0, 0, 0);
 
 /**
  * Recarga la lista de reservas desde Google y la muestra en pantalla.
@@ -40,18 +43,51 @@ async function cargarReservas() {
     eventosActuales = await listarEventos(timeMin, timeMax);
     const emailUsuario = obtenerEmailUsuario();
     console.log("🔐 Email del usuario actual:", emailUsuario);
-    renderizarCalendarioVisual(eventosActuales);
+    renderizarCalendarioVisual(eventosActuales, mesVisible);
     const n = eventosActuales.length;
     actualizarEstadoListado(
       n === 0
         ? "No hay reservas en los próximos tres meses."
         : `${n} reserva${n === 1 ? "" : "s"} confirmada${n === 1 ? "" : "s"} en los próximos tres meses.`
     );
+    actualizarNavegacionCalendario();
+    programarActualizacionDiaria();
   } catch (error) {
     console.error(error);
     actualizarEstadoListado("No se pudieron cargar las reservas.");
     mostrarMensaje(error.message, "error");
   }
+}
+
+function esMesVisibleActual() {
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return (
+    mesVisible.getFullYear() === hoy.getFullYear() &&
+    mesVisible.getMonth() === hoy.getMonth()
+  );
+}
+
+function actualizarNavegacionCalendario() {
+  if (!elementos.calendarioPrev || !elementos.calendarioNext) {
+    return;
+  }
+
+  elementos.calendarioPrev.disabled = esMesVisibleActual();
+}
+
+function mostrarMesAnterior() {
+  if (esMesVisibleActual()) {
+    return;
+  }
+
+  mesVisible = new Date(mesVisible.getFullYear(), mesVisible.getMonth() - 1, 1);
+  cargarReservas();
+}
+
+function mostrarMesSiguiente() {
+  mesVisible = new Date(mesVisible.getFullYear(), mesVisible.getMonth() + 1, 1);
+  cargarReservas();
 }
 
 /**
@@ -258,6 +294,36 @@ const modoEdicion = {
   datos: null,
 };
 
+let temporizadorActualizacionDiaria = null;
+
+function programarActualizacionDiaria() {
+  if (temporizadorActualizacionDiaria) {
+    clearTimeout(temporizadorActualizacionDiaria);
+  }
+
+  const ahora = new Date();
+  const manana = new Date(ahora);
+  manana.setHours(24, 0, 0, 0, 0);
+  const msHastaMedianoche = manana.getTime() - ahora.getTime();
+
+  temporizadorActualizacionDiaria = setTimeout(async () => {
+    try {
+      await cargarReservas();
+    } catch (error) {
+      console.error("Error al actualizar reservas automáticamente:", error);
+    } finally {
+      programarActualizacionDiaria();
+    }
+  }, msHastaMedianoche + 1000);
+}
+
+function cancelarActualizacionDiaria() {
+  if (temporizadorActualizacionDiaria) {
+    clearTimeout(temporizadorActualizacionDiaria);
+    temporizadorActualizacionDiaria = null;
+  }
+}
+
 /** Extrae nombre, email y motivo de la descripción del evento */
 function extraerDatosDelDescripcion(descripcion) {
   if (!descripcion) return {};
@@ -299,6 +365,7 @@ function enlazarEventos() {
 
   elementos.btnLogout.addEventListener("click", () => {
     cerrarSesion();
+    cancelarActualizacionDiaria();
     eventosActuales = [];
     actualizarEstadoAuth(false);
     limpiarCalendarioVisual();
@@ -309,6 +376,14 @@ function enlazarEventos() {
   });
 
   elementos.btnCancelarEdicion.addEventListener("click", cancelarEdicion);
+
+  if (elementos.calendarioPrev) {
+    elementos.calendarioPrev.addEventListener("click", mostrarMesAnterior);
+  }
+
+  if (elementos.calendarioNext) {
+    elementos.calendarioNext.addEventListener("click", mostrarMesSiguiente);
+  }
 
   elementos.formulario.addEventListener("submit", manejarEnvioFormulario);
 }
