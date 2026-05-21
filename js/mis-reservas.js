@@ -16,6 +16,7 @@ import {
   renderizarListaReservas,
   actualizarEstadoListado,
   mostrarBotonCancelarEdicion,
+  mostrarPanelEdicion,
   elementos,
 } from "./ui.js";
 
@@ -48,6 +49,8 @@ async function cargarReservasUsuario() {
       manejarEditarReserva,
       manejarCancelarReserva
     );
+
+    mostrarPanelEdicion(false);
 
     const n = reservasUsuario.length;
     actualizarEstadoListado(
@@ -167,6 +170,7 @@ async function manejarEditarReserva(reserva) {
   document.getElementById("nombre").disabled = true;
   document.getElementById("email").disabled = true;
   mostrarBotonCancelarEdicion(true);
+  mostrarPanelEdicion(true);
   mostrarMensaje(
     "Edita la información y confirma para actualizar tu reserva. Los datos personales no se pueden cambiar.",
     "info"
@@ -181,6 +185,7 @@ function cancelarEdicion() {
   document.getElementById("nombre").disabled = false;
   document.getElementById("email").disabled = false;
   mostrarBotonCancelarEdicion(false);
+  mostrarPanelEdicion(false);
   limpiarFormulario();
   ocultarMensaje();
 }
@@ -260,6 +265,7 @@ async function iniciarApp() {
   const inputFecha = document.getElementById("fecha");
   const hoy = new Date().toISOString().split("T")[0];
   inputFecha.min = hoy;
+  mostrarPanelEdicion(false);
 
   try {
     await inicializarAuth(alConectar);

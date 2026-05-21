@@ -21,6 +21,7 @@ export const elementos = {
   calendarioPrev: null,
   calendarioNext: null,
   calendarioMesActual: null,
+  panelFormulario: null,
 };
 
 /**
@@ -43,6 +44,7 @@ export function inicializarElementos() {
   elementos.calendarioPrev = document.getElementById("calendario-prev");
   elementos.calendarioNext = document.getElementById("calendario-next");
   elementos.calendarioMesActual = document.getElementById("calendario-mes-actual");
+  elementos.panelFormulario = document.getElementById("panel-formulario");
 }
 
 /**
@@ -379,6 +381,11 @@ export function mostrarBotonCancelarEdicion(mostrar) {
   if (elementos.btnCancelarEdicion) {
     elementos.btnCancelarEdicion.hidden = !mostrar;
   }
+}
+
+export function mostrarPanelEdicion(mostrar) {
+  if (!elementos.panelFormulario) return;
+  elementos.panelFormulario.hidden = !mostrar;
 }
 
 /** Evita que texto malicioso se interprete como HTML */
