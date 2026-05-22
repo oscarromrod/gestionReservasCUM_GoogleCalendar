@@ -7,6 +7,7 @@
 
 import { inicializarAuth, iniciarSesion, cerrarSesion, obtenerPerfilUsuario, obtenerEmailUsuario } from "./auth.js";
 import { listarEventos, crearEvento, actualizarEvento, eliminarEvento } from "./calendar-api.js";
+import { extraerDatosReservaEvento, extraerFechasReservaEvento } from "./eventos.js";
 import {
   validarDatosReserva,
   hayConflictoConEventos,
@@ -25,11 +26,13 @@ import {
   limpiarCalendarioVisual,
   actualizarEstadoListado,
   mostrarBotonCancelarEdicion,
+  rellenarDatosUsuario,
   elementos,
 } from "./ui.js";
 
 /** Guardamos en memoria los eventos del calendario para comprobar conflictos */
 let eventosActuales = [];
+let perfilUsuarioActual = null;
 let mesVisible = new Date();
 mesVisible.setDate(1);
 mesVisible.setHours(0, 0, 0, 0);
@@ -99,8 +102,10 @@ async function alConectar() {
     console.log("🔐 alConectar() llamado");
     const perfil = await obtenerPerfilUsuario();
     console.log("👤 Perfil obtenido:", perfil);
+    perfilUsuarioActual = perfil;
     const nombre = perfil?.name || perfil?.email || "Usuario";
     actualizarEstadoAuth(true, nombre);
+    rellenarDatosUsuario(perfilUsuarioActual);
     ocultarMensaje();
     mostrarMensaje(
       "Acceso correcto. Ya puedes consultar el calendario y confirmar tu reserva.",
@@ -133,8 +138,16 @@ async function manejarEnvioFormulario(evento) {
     fin: validacion.fin,
   };
 
-  // Si estamos en modo edición, permitir cambios sin verificar conflictos con el evento actual
+  // Si estamos en modo edicion, ignoramos el evento actual y comprobamos el resto.
   if (modoEdicion.activo) {
+    if (hayConflictoConEventos(nuevaReserva, eventosActuales, modoEdicion.eventoId)) {
+      mostrarMensaje(
+        "Ese horario ya esta reservado. Consulta el calendario y elige otra franja.",
+        "error"
+      );
+      return;
+    }
+
     try {
       elementos.btnEnviar.disabled = true;
 
@@ -162,6 +175,7 @@ async function manejarEnvioFormulario(evento) {
       // Ocultar botón de cancelar edición
       mostrarBotonCancelarEdicion(false);
 
+      rellenarDatosUsuario(perfilUsuarioActual);
       await cargarReservas();
     } catch (error) {
       console.error(error);
@@ -191,6 +205,7 @@ async function manejarEnvioFormulario(evento) {
 
     await crearEvento(eventoGoogle);
     limpiarFormulario();
+    rellenarDatosUsuario(perfilUsuarioActual);
     mostrarMensaje(
       "Reserva confirmada.",
       "exito"
@@ -211,7 +226,7 @@ async function manejarEditarReserva(reserva) {
   ocultarMensaje();
 
   // Extraer datos del evento
-  const { inicio, fin } = extraerDatosDelEvento(reserva);
+  const { inicio, fin } = extraerFechasReservaEvento(reserva);
 
   if (!inicio || !fin) {
     mostrarMensaje("No se pudieron cargar los datos de la reserva.", "error");
@@ -219,7 +234,7 @@ async function manejarEditarReserva(reserva) {
   }
 
   // Extraer datos de la descripción primero
-  const datosDescripcion = extraerDatosDelDescripcion(reserva.descripcion);
+  const datosDescripcion = extraerDatosReservaEvento(reserva.descripcion);
 
   // Guardar referencia al evento para actualizar después
   modoEdicion.activo = true;
@@ -325,33 +340,6 @@ function cancelarActualizacionDiaria() {
   }
 }
 
-/** Extrae nombre, email y motivo de la descripción del evento */
-function extraerDatosDelDescripcion(descripcion) {
-  if (!descripcion) return {};
-  
-  const datosNombre = descripcion.match(/Nombre:\s*([^\n]+)/);
-  const datosEmail = descripcion.match(/Correo:\s*([^\n]+)/);
-  const datosMotivo = descripcion.match(/Motivo:\s*([^\n]+)/);
-
-  return {
-    nombre: datosNombre ? datosNombre[1].trim() : "",
-    email: datosEmail ? datosEmail[1].trim() : "",
-    motivo: datosMotivo ? datosMotivo[1].trim() : "",
-  };
-}
-
-/** Extrae fechas de inicio y fin del evento */
-function extraerDatosDelEvento(reserva) {
-  const inicio = new Date(reserva.inicio);
-  const fin = new Date(reserva.fin);
-  
-  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) {
-    return { inicio: null, fin: null };
-  }
-
-  return { inicio, fin };
-}
-
 /**
  * Configura botones y formulario.
  */
@@ -368,6 +356,7 @@ function enlazarEventos() {
     cerrarSesion();
     cancelarActualizacionDiaria();
     eventosActuales = [];
+    perfilUsuarioActual = null;
     actualizarEstadoAuth(false);
     limpiarCalendarioVisual();
     actualizarEstadoListado(

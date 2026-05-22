@@ -1,3 +1,5 @@
+import { reservaPerteneceAlUsuario } from "./eventos.js";
+
 /**
  * ui.js — Todo lo relacionado con la pantalla (DOM)
  * -------------------------------------------------
@@ -112,6 +114,22 @@ export function leerDatosFormulario() {
   };
 }
 
+/** Rellena nombre y correo con los datos devueltos por Google. */
+export function rellenarDatosUsuario(perfil) {
+  const inputNombre = document.getElementById("nombre");
+  const inputEmail = document.getElementById("email");
+
+  if (!perfil || !inputNombre || !inputEmail) return;
+
+  if (!inputNombre.disabled && !inputNombre.value.trim()) {
+    inputNombre.value = perfil.name || "";
+  }
+
+  if (!inputEmail.disabled && !inputEmail.value.trim()) {
+    inputEmail.value = perfil.email || "";
+  }
+}
+
 /** Deja el formulario vacío tras una reserva correcta */
 export function limpiarFormulario() {
   elementos.formulario.reset();
@@ -165,11 +183,7 @@ export function renderizarListaReservas(reservas, emailUsuario = null, onEditar 
     const inicio = formatearFechaHora(reserva.inicio);
     const fin = formatearFechaHora(reserva.fin);
 
-    // Extraer email de la descripción para saber si es del usuario actual
-    const emailDelEvento = extraerEmailDelEvento(reserva.descripcion);
-    // Comparación case-insensitive para evitar problemas con mayúsculas/minúsculas
-    const esDelUsuario = emailUsuario && emailDelEvento &&
-                        emailDelEvento.toLowerCase() === emailUsuario.toLowerCase();
+    const esDelUsuario = reservaPerteneceAlUsuario(reserva, emailUsuario);
 
     li.innerHTML = `
       <h3>Franja ocupada</h3>
@@ -345,19 +359,6 @@ export function limpiarCalendarioVisual() {
   if (elementos.calendarioVisual) {
     elementos.calendarioVisual.innerHTML = "";
   }
-}
-
-function extraerMotivoDelEvento(descripcion) {
-  if (!descripcion) return "Reserva ocupada";
-  const datosMotivo = descripcion.match(/Motivo:\s*([^\n]+)/);
-  return datosMotivo ? datosMotivo[1].trim() : "Reserva ocupada";
-}
-
-/** Extrae el email de la descripción del evento (formato: "Nombre: ...\nCorreo: email@example.com\nMotivo: ...") */
-function extraerEmailDelEvento(descripcion) {
-  if (!descripcion) return null;
-  const match = descripcion.match(/Correo:\s*([^\n]+)/);
-  return match ? match[1].trim() : null;
 }
 
 /** Formato legible en español para fechas ISO de Google */

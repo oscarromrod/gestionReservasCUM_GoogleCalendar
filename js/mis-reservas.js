@@ -1,6 +1,11 @@
 import { inicializarAuth, iniciarSesion, cerrarSesion, obtenerPerfilUsuario, obtenerEmailUsuario } from "./auth.js";
 import { listarEventos, crearEvento, actualizarEvento, eliminarEvento } from "./calendar-api.js";
 import {
+  extraerDatosReservaEvento,
+  extraerFechasReservaEvento,
+  reservaPerteneceAlUsuario,
+} from "./eventos.js";
+import {
   validarDatosReserva,
   hayConflictoConEventos,
   construirEventoGoogle,
@@ -18,10 +23,12 @@ import {
   actualizarEstadoListado,
   mostrarBotonCancelarEdicion,
   mostrarPanelEdicion,
+  rellenarDatosUsuario,
   elementos,
 } from "./ui.js";
 
 let eventosActuales = [];
+let perfilUsuarioActual = null;
 
 const modoEdicion = {
   activo: false,
@@ -35,14 +42,9 @@ async function cargarReservasUsuario() {
     const { timeMin, timeMax } = obtenerRangoConsulta();
     eventosActuales = await listarEventos(timeMin, timeMax);
     const emailUsuario = obtenerEmailUsuario();
-    const reservasUsuario = eventosActuales.filter((reserva) => {
-      const email = extraerEmailDelEvento(reserva.descripcion);
-      return (
-        emailUsuario &&
-        email &&
-        email.toLowerCase() === emailUsuario.toLowerCase()
-      );
-    });
+    const reservasUsuario = eventosActuales.filter((reserva) =>
+      reservaPerteneceAlUsuario(reserva, emailUsuario)
+    );
 
     renderizarListaReservas(
       reservasUsuario,
@@ -69,8 +71,10 @@ async function cargarReservasUsuario() {
 async function alConectar() {
   try {
     const perfil = await obtenerPerfilUsuario();
+    perfilUsuarioActual = perfil;
     const nombre = perfil?.name || perfil?.email || "Usuario";
     actualizarEstadoAuth(true, nombre);
+    rellenarDatosUsuario(perfilUsuarioActual);
     ocultarMensaje();
     mostrarMensaje(
       "Acceso correcto. Ya puedes ver y gestionar tus reservas.",
@@ -101,6 +105,14 @@ async function manejarEnvioFormulario(evento) {
   };
 
   if (modoEdicion.activo) {
+    if (hayConflictoConEventos(nuevaReserva, eventosActuales, modoEdicion.eventoId)) {
+      mostrarMensaje(
+        "Ese horario ya esta reservado. Consulta el calendario y elige otra franja.",
+        "error"
+      );
+      return;
+    }
+
     try {
       elementos.btnEnviar.disabled = true;
       const datosActualizados = { ...modoEdicion.datos, motivo: datos.motivo };
@@ -111,9 +123,9 @@ async function manejarEnvioFormulario(evento) {
       );
 
       await actualizarEvento(modoEdicion.eventoId, eventoActualizado);
-      limpiarFormulario();
-      mostrarMensaje("Reserva actualizada correctamente.", "exito");
       cancelarEdicion();
+      rellenarDatosUsuario(perfilUsuarioActual);
+      mostrarMensaje("Reserva actualizada correctamente.", "exito");
       await cargarReservasUsuario();
     } catch (error) {
       console.error(error);
@@ -137,6 +149,7 @@ async function manejarEnvioFormulario(evento) {
     const eventoGoogle = construirEventoGoogle(datos, validacion.inicio, validacion.fin);
     await crearEvento(eventoGoogle);
     limpiarFormulario();
+    rellenarDatosUsuario(perfilUsuarioActual);
     mostrarMensaje("Reserva confirmada.", "exito");
     await cargarReservasUsuario();
   } catch (error) {
@@ -150,13 +163,13 @@ async function manejarEnvioFormulario(evento) {
 async function manejarEditarReserva(reserva) {
   ocultarMensaje();
 
-  const { inicio, fin } = extraerDatosDelEvento(reserva);
+  const { inicio, fin } = extraerFechasReservaEvento(reserva);
   if (!inicio || !fin) {
     mostrarMensaje("No se pudieron cargar los datos de la reserva.", "error");
     return;
   }
 
-  const datosDescripcion = extraerDatosDelDescripcion(reserva.descripcion);
+  const datosDescripcion = extraerDatosReservaEvento(reserva.descripcion);
   modoEdicion.activo = true;
   modoEdicion.eventoId = reserva.id;
   modoEdicion.datos = datosDescripcion;
@@ -207,35 +220,6 @@ async function manejarCancelarReserva(reserva) {
   }
 }
 
-function extraerDatosDelDescripcion(descripcion) {
-  if (!descripcion) return {};
-
-  const datosNombre = descripcion.match(/Nombre:\s*([^\n]+)/);
-  const datosEmail = descripcion.match(/Correo:\s*([^\n]+)/);
-  const datosMotivo = descripcion.match(/Motivo:\s*([^\n]+)/);
-
-  return {
-    nombre: datosNombre ? datosNombre[1].trim() : "",
-    email: datosEmail ? datosEmail[1].trim() : "",
-    motivo: datosMotivo ? datosMotivo[1].trim() : "",
-  };
-}
-
-function extraerEmailDelEvento(descripcion) {
-  if (!descripcion) return null;
-  const match = descripcion.match(/Correo:\s*([^\n]+)/);
-  return match ? match[1].trim() : null;
-}
-
-function extraerDatosDelEvento(reserva) {
-  const inicio = new Date(reserva.inicio);
-  const fin = new Date(reserva.fin);
-  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fin.getTime())) {
-    return { inicio: null, fin: null };
-  }
-  return { inicio, fin };
-}
-
 function enlazarEventos() {
   elementos.btnLogin.addEventListener("click", () => {
     try {
@@ -248,6 +232,7 @@ function enlazarEventos() {
   elementos.btnLogout.addEventListener("click", () => {
     cerrarSesion();
     eventosActuales = [];
+    perfilUsuarioActual = null;
     actualizarEstadoAuth(false);
     renderizarListaReservas([]);
     actualizarEstadoListado("Accede con Google para consultar tus reservas.");

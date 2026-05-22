@@ -5,6 +5,11 @@
  * Esta lógica es independiente de Google: podrías probarla sin API.
  */
 
+const HORA_APERTURA = "08:00";
+const HORA_CIERRE = "22:00";
+const DURACION_MAXIMA_MINUTOS = 240;
+const MS_POR_MINUTO = 60 * 1000;
+
 /**
  * Convierte fecha (YYYY-MM-DD) + hora (HH:MM) en objeto Date de JavaScript.
  */
@@ -35,6 +40,21 @@ export function validarDatosReserva(datos) {
     return {
       valido: false,
       mensaje: "La hora de fin debe ser posterior a la hora de inicio.",
+    };
+  }
+
+  if (horaInicio < HORA_APERTURA || horaFin > HORA_CIERRE) {
+    return {
+      valido: false,
+      mensaje: `El horario permitido para reservar es de ${HORA_APERTURA} a ${HORA_CIERRE}.`,
+    };
+  }
+
+  const duracionMinutos = (fin - inicio) / MS_POR_MINUTO;
+  if (duracionMinutos > DURACION_MAXIMA_MINUTOS) {
+    return {
+      valido: false,
+      mensaje: "La duracion maxima de una reserva es de 4 horas.",
     };
   }
 
@@ -82,8 +102,12 @@ export function haySolapamiento(inicioA, finA, inicioB, finB) {
  * @param {{ inicio: Date, fin: Date }} nuevaReserva
  * @param {Array<{ inicio: string, fin: string }>} eventosExistentes - fechas ISO de Google
  */
-export function hayConflictoConEventos(nuevaReserva, eventosExistentes) {
+export function hayConflictoConEventos(nuevaReserva, eventosExistentes, eventoIdIgnorado = null) {
   for (const evento of eventosExistentes) {
+    if (eventoIdIgnorado && evento.id === eventoIdIgnorado) {
+      continue;
+    }
+
     const inicioEvento = new Date(evento.inicio);
     const finEvento = new Date(evento.fin);
 
