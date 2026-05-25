@@ -246,8 +246,6 @@ export function renderizarListaReservas(reservas, emailUsuario = null, onEditar 
   const lista = elementos.listaReservas;
   lista.innerHTML = "";
 
-  console.log("📋 renderizarListaReservas - emailUsuario:", emailUsuario);
-
   if (!reservas.length) {
     const li = document.createElement("li");
     li.className = "lista-reservas__vacia";
@@ -266,10 +264,14 @@ export function renderizarListaReservas(reservas, emailUsuario = null, onEditar 
 
     const esDelUsuario = reservaPerteneceAlUsuario(reserva, emailUsuario);
 
-    li.innerHTML = `
-      <h3>Franja ocupada</h3>
-      <p class="lista-reservas__horario">${inicio} — ${fin}</p>
-    `;
+    const h3 = document.createElement("h3");
+    h3.textContent = "Franja ocupada";
+    li.appendChild(h3);
+
+    const pHorario = document.createElement("p");
+    pHorario.className = "lista-reservas__horario";
+    pHorario.textContent = `${inicio} — ${fin}`;
+    li.appendChild(pHorario);
 
     // Mostrar botones solo si es reserva del usuario actual
     if (esDelUsuario) {
@@ -398,7 +400,10 @@ export function renderizarCalendarioVisual(reservas, fechaReferencia = new Date(
 
     const cabeceraDia = document.createElement("header");
     cabeceraDia.className = "calendario-visual__dia-mes-cabecera";
-    cabeceraDia.innerHTML = `<span class="calendario-visual__numero">${dia.getDate()}</span>`;
+    const spanNumero = document.createElement("span");
+    spanNumero.className = "calendario-visual__numero";
+    spanNumero.textContent = String(dia.getDate());
+    cabeceraDia.appendChild(spanNumero);
     diaCelda.appendChild(cabeceraDia);
 
     const eventosContenedor = document.createElement("div");
@@ -423,10 +428,26 @@ export function renderizarCalendarioVisual(reservas, fechaReferencia = new Date(
           `Horario ocupado de ${inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} a ${fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`
         );
 
-        evento.innerHTML = `
-          <span class="calendario-visual__evento-hora">${inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} — ${fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}</span>
-          <span class="calendario-visual__evento-texto">Ocupado</span>
-        `;
+        const spanHora = document.createElement("span");
+        spanHora.className = "calendario-visual__evento-hora";
+        spanHora.textContent = `${inicio.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })} — ${fin.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" })}`;
+
+        const spanTexto = document.createElement("span");
+        spanTexto.className = "calendario-visual__evento-texto";
+        spanTexto.textContent = "Ocupado";
+
+        evento.appendChild(spanHora);
+        evento.appendChild(spanTexto);
+
+        // Soporte para activar con teclado (Enter/Space)
+        evento.addEventListener("keydown", (e) => {
+          const key = e.key || e.keyCode;
+          if (key === "Enter" || key === " " || key === "Spacebar" || key === 13 || key === 32) {
+            e.preventDefault();
+            // Disparar el mismo comportamiento que un click si existiera
+            if (typeof evento.click === "function") evento.click();
+          }
+        });
 
         eventosContenedor.appendChild(evento);
       });

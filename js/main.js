@@ -54,7 +54,6 @@ async function cargarReservas() {
     const { timeMin, timeMax } = obtenerRangoConsulta();
     eventosActuales = await listarEventos(timeMin, timeMax);
     const emailUsuario = obtenerEmailUsuario();
-    console.log("🔐 Email del usuario actual:", emailUsuario);
     renderizarCalendarioActual();
     const n = eventosActuales.length;
     actualizarResumenReservas(n);
@@ -147,9 +146,8 @@ function mostrarMesSiguiente() {
  */
 async function alConectar() {
   try {
-    console.log("🔐 alConectar() llamado");
     const perfil = await obtenerPerfilUsuario();
-    console.log("👤 Perfil obtenido:", perfil);
+
     perfilUsuarioActual = perfil;
     const nombre = perfil?.name || perfil?.email || "Usuario";
     actualizarEstadoAuth(true, nombre);
@@ -367,7 +365,9 @@ function programarActualizacionDiaria() {
 
   const ahora = new Date();
   const manana = new Date(ahora);
-  manana.setHours(24, 0, 0, 0, 0);
+  // Ajustar a la medianoche del día siguiente de forma clara
+  manana.setHours(0, 0, 0, 0);
+  manana.setDate(manana.getDate() + 1);
   const msHastaMedianoche = manana.getTime() - ahora.getTime();
 
   temporizadorActualizacionDiaria = setTimeout(async () => {
