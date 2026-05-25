@@ -67,7 +67,7 @@ El renderizado del calendario visual mensual se realiza al vuelo mediante la man
 Durante la fase de análisis y pruebas del proyecto, se ha identificado una limitación crítica en el modelo de seguridad inherente a la API v3 de Google Calendar cuando se consume exclusivamente desde el lado del cliente (*frontend*):
 
 * **Acoplamiento de Permisos:** Para que los ciudadanos puedan realizar inserciones (`POST`) o modificaciones (`PATCH`) en el calendario municipal, es obligatorio que su cuenta autenticada disponga de permisos de edición sobre dicho recurso de Google.
-* **Vulnerabilidad en la Integridad de los Datos:** Al otorgar estos permisos a nivel de Google Calendar, cualquier usuario avanzado podría saltarse la interfaz de nuestra aplicación (por ejemplo, usando herramientas como Postman o modificando el código desde la consola de desarrollo del navegador) y alterar o borrar eventos creados por otros usuarios, ya que la API de Google no ofrece un sistema nativo granular para restringir que un usuario solo edite "sus propios eventos" dentro de un mismo calendario compartido.
+* **Vulnerabilidad en la Integridad de los Datos:** Al otorgar estos permisos a nivel de Google Calendar, cualquier usuario podría alterar o borrar eventos creados por otros usuarios, ya que la API de Google no ofrece un sistema nativo granular para restringir que un usuario solo edite "sus propios eventos" dentro de un mismo calendario compartido.
 
 Si bien la aplicación actual mitiga esto en la interfaz ocultando y bloqueando controles visuales, no constituye una solución de seguridad robusta para un entorno de producción real y masivo.
 
