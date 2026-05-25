@@ -877,3 +877,107 @@ button:disabled {
     padding: 1rem;
   }
 }
+
+/* Ajustes específicos para el calendario en pantallas pequeñas
+   - permitir scroll horizontal si la grilla de 7 columnas no cabe
+   - reducir alturas mínimas de las celdas y eventos para que las franjas se vean completas
+   - asegurar que el texto de la franja haga wrap y no se corte
+*/
+@media (max-width: 520px) {
+  .calendario-visual {
+    /* permitir desplazamiento si la grilla es más ancha que el viewport */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .calendario-visual__mes {
+    /* si hay borde-radius y overflow oculto, puede recortar hijos; dejamos overflow visible */
+    overflow: visible;
+  }
+
+  .calendario-visual__grilla-mes {
+    gap: 1px;
+  }
+
+  .calendario-visual__dia-mes {
+    /* reducir altura mínima para que el contenido no quede cortado en pantallas pequeñas */
+    min-height: 110px;
+    padding: 0.6rem;
+  }
+
+  .calendario-visual__evento-mes {
+    min-height: 40px;
+    font-size: 0.82rem;
+    white-space: normal;
+    overflow: visible;
+  }
+
+  .calendario-visual__evento-hora,
+  .calendario-visual__evento-texto {
+    display: block;
+    white-space: normal;
+  }
+}
+
+/* En móviles muy estrechos, transformar la grilla del mes en una lista vertical
+   para evitar que las celdas de 7 columnas sean demasiado estrechas y corten el texto
+*/
+@media (max-width: 580px) {
+  .calendario-visual {
+    overflow-x: visible;
+  }
+
+  /* Ocultar nombres de la semana para ganar espacio */
+  .calendario-visual__fila-dias {
+    display: none;
+  }
+
+  /* Hacemos que la 'grilla' sea una lista de bloques apilados */
+  .calendario-visual__grilla-mes {
+    display: block;
+    gap: 0.5rem;
+  }
+
+  .calendario-visual__dia-mes {
+    display: block;
+    min-height: auto;
+    padding: 0.6rem;
+    border-right: none;
+    border-bottom: 1px solid var(--color-borde);
+    background: var(--color-superficie);
+  }
+
+  .calendario-visual__dia-mes-cabecera {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .calendario-visual__numero {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-primario);
+    flex-shrink: 0;
+  }
+
+  .calendario-visual__eventos-mes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0;
+  }
+
+  .calendario-visual__evento-mes {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.5rem;
+    box-sizing: border-box;
+    white-space: normal;
+  }
+
+  .calendario-visual__dia-mes-resumen {
+    margin-top: 0.25rem;
+  }
+}
+
