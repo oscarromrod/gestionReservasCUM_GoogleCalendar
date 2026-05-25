@@ -508,3 +508,4 @@ function escaparHtml(texto) {
   div.textContent = texto;
   return div.innerHTML;
 }
+
