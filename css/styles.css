@@ -542,6 +542,43 @@ button:disabled {
   padding-bottom: 0.5rem;
 }
 
+.calendario-filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+.calendario-filtros__boton {
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--color-primario);
+  background: #fff;
+  border: 1px solid var(--color-borde);
+  border-radius: 999px;
+  padding: 0.5rem 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.calendario-filtros__boton:hover,
+.calendario-filtros__boton:focus-visible {
+  border-color: var(--color-primario);
+  background: var(--color-primario-claro);
+}
+
+.calendario-filtros__boton--activo {
+  color: #fff;
+  background: var(--color-primario);
+  border-color: var(--color-primario);
+}
+
+.calendario-filtros__boton:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
 .calendario-navegacion {
   display: flex;
   align-items: center;
@@ -691,6 +728,7 @@ button:disabled {
 }
 
 .calendario-visual__vacio {
+  grid-column: 1 / -1;
   padding: 1.1rem;
   color: var(--color-texto-suave);
   background: var(--color-superficie);

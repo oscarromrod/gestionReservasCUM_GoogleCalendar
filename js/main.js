@@ -33,9 +33,17 @@ import {
 /** Guardamos en memoria los eventos del calendario para comprobar conflictos */
 let eventosActuales = [];
 let perfilUsuarioActual = null;
+let filtroCalendario = "todos";
 let mesVisible = new Date();
 mesVisible.setDate(1);
 mesVisible.setHours(0, 0, 0, 0);
+
+const ETIQUETAS_FILTRO = {
+  todos: "todos",
+  semana: "esta semana",
+  "siete-dias": "proximos 7 dias",
+  libres: "dias libres",
+};
 
 /**
  * Recarga la lista de reservas desde Google y la muestra en pantalla.
@@ -47,20 +55,58 @@ async function cargarReservas() {
     eventosActuales = await listarEventos(timeMin, timeMax);
     const emailUsuario = obtenerEmailUsuario();
     console.log("🔐 Email del usuario actual:", emailUsuario);
-    renderizarCalendarioVisual(eventosActuales, mesVisible);
+    renderizarCalendarioActual();
     const n = eventosActuales.length;
-    actualizarEstadoListado(
-      n === 0
-        ? "No hay reservas en los próximos tres meses."
-        : `${n} reserva${n === 1 ? "" : "s"} confirmada${n === 1 ? "" : "s"} en los próximos tres meses.`
-    );
+    actualizarResumenReservas(n);
     actualizarNavegacionCalendario();
+    actualizarBotonesFiltroCalendario();
     programarActualizacionDiaria();
   } catch (error) {
     console.error(error);
     actualizarEstadoListado("No se pudieron cargar las reservas.");
     mostrarMensaje(error.message, "error");
   }
+}
+
+function renderizarCalendarioActual() {
+  renderizarCalendarioVisual(eventosActuales, mesVisible, filtroCalendario);
+}
+
+function actualizarResumenReservas(totalReservas) {
+  const etiquetaFiltro = ETIQUETAS_FILTRO[filtroCalendario] || ETIQUETAS_FILTRO.todos;
+  const textoBase =
+    totalReservas === 0
+      ? "No hay reservas en los proximos tres meses."
+      : `${totalReservas} reserva${totalReservas === 1 ? "" : "s"} confirmada${totalReservas === 1 ? "" : "s"} en los proximos tres meses.`;
+
+  actualizarEstadoListado(
+    filtroCalendario === "todos" ? textoBase : `${textoBase} Filtro activo: ${etiquetaFiltro}.`
+  );
+}
+
+function actualizarBotonesFiltroCalendario() {
+  const filtrosHabilitados = document.body.classList.contains("sesion-activa");
+  document.querySelectorAll("[data-filtro-calendario]").forEach((boton) => {
+    const activo = boton.dataset.filtroCalendario === filtroCalendario;
+    boton.classList.toggle("calendario-filtros__boton--activo", activo);
+    boton.setAttribute("aria-pressed", activo ? "true" : "false");
+    boton.disabled = !filtrosHabilitados;
+  });
+}
+
+function aplicarFiltroCalendario(filtro) {
+  filtroCalendario = ETIQUETAS_FILTRO[filtro] ? filtro : "todos";
+
+  if (filtroCalendario === "semana" || filtroCalendario === "siete-dias") {
+    mesVisible = new Date();
+    mesVisible.setDate(1);
+    mesVisible.setHours(0, 0, 0, 0);
+  }
+
+  renderizarCalendarioActual();
+  actualizarResumenReservas(eventosActuales.length);
+  actualizarNavegacionCalendario();
+  actualizarBotonesFiltroCalendario();
 }
 
 function esMesVisibleActual() {
@@ -77,7 +123,9 @@ function actualizarNavegacionCalendario() {
     return;
   }
 
-  elementos.calendarioPrev.disabled = esMesVisibleActual();
+  const filtroRelativo = filtroCalendario === "semana" || filtroCalendario === "siete-dias";
+  elementos.calendarioPrev.disabled = filtroRelativo || esMesVisibleActual();
+  elementos.calendarioNext.disabled = filtroRelativo;
 }
 
 function mostrarMesAnterior() {
@@ -357,8 +405,11 @@ function enlazarEventos() {
     cancelarActualizacionDiaria();
     eventosActuales = [];
     perfilUsuarioActual = null;
+    filtroCalendario = "todos";
     actualizarEstadoAuth(false);
     limpiarCalendarioVisual();
+    actualizarBotonesFiltroCalendario();
+    actualizarNavegacionCalendario();
     actualizarEstadoListado(
       "Accede con Google para consultar las reservas confirmadas."
     );
@@ -375,6 +426,12 @@ function enlazarEventos() {
     elementos.calendarioNext.addEventListener("click", mostrarMesSiguiente);
   }
 
+  document.querySelectorAll("[data-filtro-calendario]").forEach((boton) => {
+    boton.addEventListener("click", () => {
+      aplicarFiltroCalendario(boton.dataset.filtroCalendario);
+    });
+  });
+
   elementos.formulario.addEventListener("submit", manejarEnvioFormulario);
 }
 
@@ -385,6 +442,8 @@ async function iniciarApp() {
   inicializarElementos();
   enlazarEventos();
   actualizarEstadoAuth(false);
+  actualizarBotonesFiltroCalendario();
+  actualizarNavegacionCalendario();
 
   // Fecha mínima del input date = hoy, máxima = tres meses desde hoy
   const inputFecha = document.getElementById("fecha");

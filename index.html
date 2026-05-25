@@ -113,6 +113,12 @@
               <strong>Privacidad:</strong> en este listado solo ver&aacute;s franjas ocupadas. Los datos personales del solicitante no se muestran aqu&iacute; ni en el calendario p&uacute;blico (solo los usa el ayuntamiento de forma interna).
             </p>
           </header>
+          <div class="calendario-filtros" aria-label="Filtros rapidos del calendario">
+            <button type="button" class="calendario-filtros__boton calendario-filtros__boton--activo" data-filtro-calendario="todos" aria-pressed="true">Todos</button>
+            <button type="button" class="calendario-filtros__boton" data-filtro-calendario="semana" aria-pressed="false">Esta semana</button>
+            <button type="button" class="calendario-filtros__boton" data-filtro-calendario="siete-dias" aria-pressed="false">Proximos 7 dias</button>
+            <button type="button" class="calendario-filtros__boton" data-filtro-calendario="libres" aria-pressed="false">Dias libres</button>
+          </div>
           <div class="calendario-navegacion" aria-label="Navegación del calendario mensual">
             <button id="calendario-prev" type="button" class="btn btn--secundario btn--icon" aria-label="Mes anterior">◀</button>
             <div id="calendario-mes-actual" class="calendario-navegacion__titulo" aria-live="polite"></div>

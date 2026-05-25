@@ -154,6 +154,87 @@ function obtenerDiasDeCalendario(fechaReferencia) {
   return dias;
 }
 
+function obtenerDiasEntre(inicio, fin) {
+  const dias = [];
+  for (let dia = new Date(inicio); dia <= fin; dia.setDate(dia.getDate() + 1)) {
+    dias.push(new Date(dia));
+  }
+  return dias;
+}
+
+function normalizarFechaDia(fecha) {
+  const dia = new Date(fecha);
+  dia.setHours(0, 0, 0, 0);
+  return dia;
+}
+
+function obtenerEventosPorFecha(reservas) {
+  return reservas.reduce((acumulador, reserva) => {
+    const inicio = new Date(reserva.inicio);
+    const clave = obtenerClaveFechaLocal(inicio);
+    acumulador[clave] = acumulador[clave] || [];
+    acumulador[clave].push(reserva);
+    return acumulador;
+  }, {});
+}
+
+function obtenerRangoFiltro(filtro) {
+  const hoy = normalizarFechaDia(new Date());
+
+  if (filtro === "semana") {
+    const fin = new Date(hoy);
+    const diaSemana = (hoy.getDay() + 6) % 7;
+    fin.setDate(hoy.getDate() + (6 - diaSemana));
+    return { inicio: hoy, fin };
+  }
+
+  if (filtro === "siete-dias") {
+    const fin = new Date(hoy);
+    fin.setDate(hoy.getDate() + 6);
+    return { inicio: hoy, fin };
+  }
+
+  return null;
+}
+
+function prepararDiasFiltrados(diasCalendario, eventosPorFecha, filtro) {
+  const rango = obtenerRangoFiltro(filtro);
+
+  const diasFiltrados = diasCalendario.filter((dia) => {
+    if (!dia) return false;
+
+    const diaNormalizado = normalizarFechaDia(dia);
+    const eventosDelDia = eventosPorFecha[obtenerClaveFechaLocal(dia)] || [];
+
+    if (rango && (diaNormalizado < rango.inicio || diaNormalizado > rango.fin)) {
+      return false;
+    }
+
+    if (filtro === "libres") {
+      return eventosDelDia.length === 0;
+    }
+
+    return true;
+  });
+
+  if (!diasFiltrados.length) {
+    return [];
+  }
+
+  const primerDiaSemana = (diasFiltrados[0].getDay() + 6) % 7;
+  return [...Array.from({ length: primerDiaSemana }, () => null), ...diasFiltrados];
+}
+
+function obtenerTextoFiltroCalendario(filtro) {
+  const textos = {
+    semana: "Esta semana",
+    "siete-dias": "Proximos 7 dias",
+    libres: "Dias libres",
+  };
+
+  return textos[filtro] || "";
+}
+
 /**
  * Pinta la lista de reservas en pantalla.
  * @param {Array<{ id: string, titulo: string, inicio: string, fin: string, descripcion?: string }>} reservas
@@ -221,7 +302,7 @@ export function renderizarListaReservas(reservas, emailUsuario = null, onEditar 
 }
 
 /** Renderiza un calendario visual con las franjas ocupadas del mes actual. */
-export function renderizarCalendarioVisual(reservas, fechaReferencia = new Date()) {
+export function renderizarCalendarioVisual(reservas, fechaReferencia = new Date(), filtro = "todos") {
   const contenedor = elementos.calendarioVisual;
   if (!contenedor) return;
   contenedor.innerHTML = "";
@@ -240,15 +321,15 @@ export function renderizarCalendarioVisual(reservas, fechaReferencia = new Date(
     ? hoy
     : new Date(mesSeleccionado.getFullYear(), mesSeleccionado.getMonth(), 1);
 
-  const diasCalendario = obtenerDiasDeCalendario(inicio);
-
-  const eventosPorFecha = reservas.reduce((acumulador, reserva) => {
-    const inicio = new Date(reserva.inicio);
-    const clave = obtenerClaveFechaLocal(inicio);
-    acumulador[clave] = acumulador[clave] || [];
-    acumulador[clave].push(reserva);
-    return acumulador;
-  }, {});
+  const eventosPorFecha = obtenerEventosPorFecha(reservas);
+  const rangoFiltro = obtenerRangoFiltro(filtro);
+  const diasCalendarioBase = rangoFiltro
+    ? obtenerDiasEntre(rangoFiltro.inicio, rangoFiltro.fin)
+    : obtenerDiasDeCalendario(inicio);
+  const diasCalendario =
+    filtro === "todos"
+      ? diasCalendarioBase
+      : prepararDiasFiltrados(diasCalendarioBase, eventosPorFecha, filtro);
 
   Object.values(eventosPorFecha).forEach((eventos) => {
     eventos.sort((a, b) => new Date(a.inicio) - new Date(b.inicio));
@@ -257,10 +338,11 @@ export function renderizarCalendarioVisual(reservas, fechaReferencia = new Date(
   const calendario = document.createElement("div");
   calendario.className = "calendario-visual__mes";
 
+  const textoFiltro = obtenerTextoFiltroCalendario(filtro);
   const nombreMes = `${mesSeleccionado.toLocaleDateString("es-ES", {
     month: "long",
     year: "numeric",
-  })}${esMesActual ? " — Desde hoy" : ""}`;
+  })}${esMesActual ? " - Desde hoy" : ""}${textoFiltro ? ` - ${textoFiltro}` : ""}`;
 
   if (elementos.calendarioMesActual) {
     elementos.calendarioMesActual.textContent = nombreMes;
@@ -280,6 +362,16 @@ export function renderizarCalendarioVisual(reservas, fechaReferencia = new Date(
 
   const grilla = document.createElement("div");
   grilla.className = "calendario-visual__grilla-mes";
+
+  if (!diasCalendario.length) {
+    const aviso = document.createElement("div");
+    aviso.className = "calendario-visual__vacio";
+    aviso.textContent = "No hay dias que coincidan con este filtro.";
+    grilla.appendChild(aviso);
+    calendario.appendChild(grilla);
+    contenedor.appendChild(calendario);
+    return;
+  }
 
   diasCalendario.forEach((dia) => {
     if (dia === null) {
