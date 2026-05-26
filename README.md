@@ -30,7 +30,8 @@ export const CALENDAR_ID = "id-del-calendario@group.calendar.google.com";
 2. Selecciona el proyecto que usarás para esta app.
 3. Navega a **APIs y servicios** > **Credenciales**.
 4. Crea o usa un **ID de cliente OAuth 2.0** para una aplicación web.
-5. Copia el valor de **ID de cliente** y pégalo en `GOOGLE_CLIENT_ID`.
+5. **¡Muy importante!** Dentro de la configuración de ese ID de cliente OAuth, busca la sección **Orígenes de JavaScript autorizados** y añade la URL exacta de tu servidor local (por ejemplo: `http://localhost:5500` o `http://127.0.0.1:5500` si usas Live Server). Si no lo haces, Google bloqueará el inicio de sesión.
+6. Copia el valor de **ID de cliente** y pégalo en `GOOGLE_CLIENT_ID`.
 
 > Nota: si no tienes una credencial OAuth, crea una nueva con tipo "Aplicación web".
 
