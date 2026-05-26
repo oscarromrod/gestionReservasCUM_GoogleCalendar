@@ -43,6 +43,13 @@ export const CALENDAR_ID = "id-del-calendario@group.calendar.google.com";
 4. Busca la sección **Integrar calendario**.
 5. Copia el valor de **ID del calendario** y pégalo en `CALENDAR_ID`.
 
+### 4b. Configurar la Pantalla de Consentimiento OAuth
+
+Si estás configurando el proyecto por primera vez en Google Cloud Console:
+1. Ve a **Pantalla de consentimiento de OAuth**.
+2. Configura el tipo de usuario como **Externo** (External).
+3. Si el estado de la aplicación es "En pruebas" (Testing), busca la sección **Usuarios de prueba** (Test users) y añade explícitamente las direcciones de correo de Google (Gmail) que van a iniciar sesión para probar la aplicación. De lo contrario, Google mostrará un error de "Aplicación no verificada".
+
 ### 5. Uso de la aplicación
 
 - Abre `index.html` en un servidor local (por ejemplo, Live Server en VS Code).
